@@ -1,0 +1,23 @@
+[
+    {
+        "name" : "com.github.andirady.mq.SolrSearchResult",
+        "allDeclaredConstructors" : true,
+        "allPublicConstructors" : true,
+        "allDeclaredMethods" : true,
+        "allPublicMethods" : true
+    },
+    {
+        "name" : "com.github.andirady.mq.SolrSearchResult$Response",
+        "allDeclaredConstructors" : true,
+        "allPublicConstructors" : true,
+        "allDeclaredMethods" : true,
+        "allPublicMethods" : true
+    },
+    {
+        "name" : "com.github.andirady.mq.SolrSearchResult$Document",
+        "allDeclaredConstructors" : true,
+        "allPublicConstructors" : true,
+        "allDeclaredMethods" : true,
+        "allPublicMethods" : true
+    }
+]

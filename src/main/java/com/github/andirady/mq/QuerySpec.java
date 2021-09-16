@@ -2,63 +2,24 @@ package com.github.andirady.mq;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.util.StringJoiner;
 
-public class QuerySpec {
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+public record QuerySpec(String groupId, String artifactId, String version) {
 
     static QuerySpec of(String spec) {
         var parts = spec.split(":");
-        var inst = new QuerySpec();
         switch (parts.length) {
             case 1:
-                inst.artifactId(parts[0]);
-                break;
+                return new QuerySpec(null, parts[0], null);
             case 2:
-                inst.groupId(parts[0]);
-                inst.artifactId(parts[1]);
-                break;
+                return new QuerySpec(parts[0], parts[1], null);
             case 3:
-                inst.groupId(parts[0]);
-                inst.artifactId(parts[1]);
-                inst.version(parts[2]);
-                break;
+                return new QuerySpec(parts[0], parts[1], parts[2]);
             default:
                 throw new IllegalArgumentException("Invalid spec: " + spec);
         }
-
-        return inst;
-    }
-
-    private String groupId;
-    private String artifactId;
-    private String version;
-
-    private QuerySpec() {
-        // NOP
-    }
-
-    public String groupId() {
-        return groupId;
-    }
-
-    public void groupId(String g) {
-        groupId = g;
-    }
-
-    public String artifactId() {
-        return artifactId;
-    }
-
-    public void artifactId(String a) {
-        artifactId = a;
-    }
-
-    public String version() {
-        return version;
-    }
-
-    public void version(String v) {
-        version = v;
     }
 
     public URI toURI() {
@@ -66,12 +27,12 @@ public class QuerySpec {
             return new URI("https", "search.maven.org", "/solrsearch/select", "q=" + toString() + "&start=0&rows=1",
                     null);
         } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
     }
 
     public String toString() {
-        var parts = new ArrayList<String>();
+        var parts = new StringJoiner(" AND ");
         if (groupId != null) {
             parts.add("g:" + groupId);
         }
@@ -84,6 +45,6 @@ public class QuerySpec {
             parts.add("v:" + version);
         }
 
-        return String.join(" AND ", parts);
+        return parts.toString();
     }
 }
