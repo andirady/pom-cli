@@ -1,23 +1,117 @@
 [
-    {
-        "name" : "com.github.andirady.mq.SolrSearchResult",
-        "allDeclaredConstructors" : true,
-        "allPublicConstructors" : true,
-        "allDeclaredMethods" : true,
-        "allPublicMethods" : true
-    },
-    {
-        "name" : "com.github.andirady.mq.SolrSearchResult$Response",
-        "allDeclaredConstructors" : true,
-        "allPublicConstructors" : true,
-        "allDeclaredMethods" : true,
-        "allPublicMethods" : true
-    },
-    {
-        "name" : "com.github.andirady.mq.SolrSearchResult$Document",
-        "allDeclaredConstructors" : true,
-        "allPublicConstructors" : true,
-        "allDeclaredMethods" : true,
-        "allPublicMethods" : true
-    }
+  {
+    "name": "com.github.andirady.mq.solrsearch.SolrSearchRequest",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.String",
+          "java.lang.String",
+          "java.lang.String",
+          "int",
+          "int"
+        ]
+      },
+      {
+        "name": "q",
+        "parameterTypes": []
+      },
+      {
+        "name": "core",
+        "parameterTypes": []
+      },
+      {
+        "name": "sort",
+        "parameterTypes": []
+      },
+      {
+        "name": "start",
+        "parameterTypes": []
+      },
+      {
+        "name": "rows",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "com.github.andirady.mq.solrsearch.SolrSearchResult",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "com.github.andirady.mq.solrsearch.SolrSearchResult$Response"
+        ]
+      },
+      {
+        "name": "response",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "com.github.andirady.mq.solrsearch.SolrSearchResult$Response",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "int",
+          "int",
+          "java.util.List"
+        ]
+      },
+      {
+        "name": "numFound",
+        "parameterTypes": []
+      },
+      {
+        "name": "start",
+        "parameterTypes": []
+      },
+      {
+        "name": "docs",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "com.github.andirady.mq.solrsearch.SolrSearchResult$Document",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.String",
+          "java.lang.String",
+          "java.lang.String",
+          "java.lang.String",
+          "java.lang.String",
+          "long"
+        ]
+      },
+      {
+        "name": "id",
+        "parameterTypes": []
+      },
+      {
+        "name": "g",
+        "parameterTypes": []
+      },
+      {
+        "name": "a",
+        "parameterTypes": []
+      },
+      {
+        "name": "v",
+        "parameterTypes": []
+      },
+      {
+        "name": "latestVersion",
+        "parameterTypes": []
+      },
+      {
+        "name": "timestamp",
+        "parameterTypes": []
+      }
+    ]
+  }
 ]

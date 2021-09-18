@@ -4,8 +4,21 @@ Maven Query and more
 
 ## Example usage
 
-```
+```bash
+# Add to pom.xml
+# If pom.xml does not exists yet, create a new one.
 mq add info.picocli:picocli
+
+# Search
+mq search log4j-api
+
+# Search artifacts by class name
+mq search --class Logger
+mq search -c Logger
+
+# Search artifacts by fully qualified class name
+mq search --full-class org.apache.logging.log4j.Logger
+mq search -fc org.apache.logging.log4j.Logger
 ```
 
 ## TODO
