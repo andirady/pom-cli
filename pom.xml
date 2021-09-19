@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.andirady.mq</groupId>
@@ -77,6 +78,7 @@
     </build>
     <profiles>
         <profile>
+            <!-- Experimental -->
             <id>graalvm</id>
             <properties>
                 <graalvm.version>21.2.0</graalvm.version>
@@ -128,6 +130,9 @@
         </profile>
         <profile>
             <id>jlink</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <build>
                 <plugins>
                     <plugin>

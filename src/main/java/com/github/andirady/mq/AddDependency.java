@@ -6,9 +6,12 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -77,7 +80,6 @@ public class AddDependency implements Runnable {
                     .forEachOrdered(depsElem::appendChild);
 
             var tf = TransformerFactory.newInstance();
-            /* FIXME disabled for now since doesn't work with native-image
             Transformer transformer;
             try (var xlst = getClass().getClassLoader().getResourceAsStream("pom.xlst")) {
                 if (xlst == null) {
@@ -85,8 +87,6 @@ public class AddDependency implements Runnable {
                 }
                 transformer = tf.newTransformer(new StreamSource(xlst));
             }
-            */
-            var transformer = tf.newTransformer();
             var domSource = new DOMSource(doc);
             try (var os = Files.newOutputStream(pomPath)) {
                 var streamResult = new StreamResult(os);
