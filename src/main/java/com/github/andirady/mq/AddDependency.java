@@ -25,31 +25,31 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.PicocliException;
 import picocli.CommandLine.Spec;
 
-@Command(name = "add")
+@Command(name = "add", sortOptions = false)
 public class AddDependency implements Runnable {
 
     private static final Logger LOG = Logger.getLogger("add");
 
     static class Scope {
 
-        @Option(names = "--compile", description = "Add as compile dependency")
+        @Option(names = "--compile", description = "Add as compile dependency. This is the default", order = 0)
         boolean compile;
 
-        @Option(names = "--runtime", description = "Add as runtime dependency")
+        @Option(names = "--runtime", description = "Add as runtime dependency", order = 1)
         boolean runtime;
 
-        @Option(names = "--provided", description = "Add as provided dependency")
+        @Option(names = "--provided", description = "Add as provided dependency", order = 2)
         boolean provided;
 
-        @Option(names = "--test", description = "Add as test dependency")
+        @Option(names = "--test", description = "Add as test dependency", order = 3)
         boolean test;
 
     }
 
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
+    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml", order = 0)
     Path pomPath;
 
-    @ArgGroup(exclusive = true, multiplicity = "0..1")
+    @ArgGroup(exclusive = true, multiplicity = "0..1", order = 1)
     Scope scope;
 
     @Parameters(arity = "1..*", paramLabel = "groupId:artifactId[:version]")
@@ -141,7 +141,7 @@ public class AddDependency implements Runnable {
         } else if (scope.provided) {
             text = "provided";
         } else if (scope.test) {
-            text = "text";
+            text = "test";
         }
 
         if (text != null) {
