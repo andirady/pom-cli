@@ -16,6 +16,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.Model.CommandSpec;
@@ -26,11 +27,30 @@ import picocli.CommandLine.Spec;
 
 @Command(name = "add")
 public class AddDependency implements Runnable {
-    
+
     private static final Logger LOG = Logger.getLogger("add");
-    
+
+    static class Scope {
+
+        @Option(names = "--compile", description = "Add as compile dependency")
+        boolean compile;
+
+        @Option(names = "--runtime", description = "Add as runtime dependency")
+        boolean runtime;
+
+        @Option(names = "--provided", description = "Add as provided dependency")
+        boolean provided;
+
+        @Option(names = "--test", description = "Add as test dependency")
+        boolean test;
+
+    }
+
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
     Path pomPath;
+
+    @ArgGroup(exclusive = true, multiplicity = "0..1")
+    Scope scope;
 
     @Parameters(arity = "1..*", paramLabel = "groupId:artifactId[:version]")
     List<QuerySpec> coords;
@@ -60,11 +80,11 @@ public class AddDependency implements Runnable {
                 doc = db.newDocument();
                 projectElem = doc.appendChild(doc.createElement("project"));
                 projectElem.appendChild(doc.createElement("modelVersion")).setTextContent("4.0.0");
-                
+
                 var groupId = "unnamed";
                 var artifactId = Path.of(System.getProperty("user.dir")).getFileName().toString();
                 var version = "0.0.1-SNAPSHOT";
-                
+
                 projectElem.appendChild(doc.createElement("groupId")).setTextContent(groupId);
                 projectElem.appendChild(doc.createElement("artifactId")).setTextContent(artifactId);
                 projectElem.appendChild(doc.createElement("version")).setTextContent(version);
@@ -114,6 +134,20 @@ public class AddDependency implements Runnable {
         elem.appendChild(doc.createElement("groupId")).setTextContent(spec.groupId());
         elem.appendChild(doc.createElement("artifactId")).setTextContent(spec.artifactId());
         elem.appendChild(doc.createElement("version")).setTextContent(spec.version());
+
+        String text = null;
+        if (scope.runtime) {
+            text = "runtime";
+        } else if (scope.provided) {
+            text = "provided";
+        } else if (scope.test) {
+            text = "text";
+        }
+
+        if (text != null) {
+            elem.appendChild(doc.createElement("scope")).setTextContent(text);
+        }
+
         return elem;
     }
 }
