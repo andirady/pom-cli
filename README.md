@@ -8,6 +8,8 @@ Maven Query and more
 # Add to pom.xml
 # If pom.xml does not exists yet, create a new one.
 mq add info.picocli:picocli
+# Add test dependency
+mq add --test org.junit.jupiter:junit-jupiter
 
 # Search
 mq search log4j-api
