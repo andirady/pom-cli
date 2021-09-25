@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.andirady.mq</groupId>
@@ -9,6 +8,7 @@
         <maven.compiler.source>16</maven.compiler.source>
         <maven.compiler.target>16</maven.compiler.target>
         <picocli.version>4.6.1</picocli.version>
+        <exec.mainClass>com.github.andirady.mq.Main</exec.mainClass>
     </properties>
     <dependencies>
         <dependency>
