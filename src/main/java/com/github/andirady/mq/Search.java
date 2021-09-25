@@ -3,7 +3,6 @@ package com.github.andirady.mq;
 import static java.util.stream.Collectors.toMap;
 
 import java.util.StringJoiner;
-import java.util.function.Function;
 
 import com.github.andirady.mq.solrsearch.SolrSearch;
 import com.github.andirady.mq.solrsearch.SolrSearchRequest;
@@ -34,7 +33,7 @@ public class Search implements Runnable {
     @Override
     public void run() {
         var solr = new SolrSearch();
-        Function<Document, String> toString = Document::id;
+        var core = "";
         String term;
         if (arg.c != null) {
             term = "c:" + arg.c;
@@ -42,16 +41,16 @@ public class Search implements Runnable {
             term = "fc:" + arg.fc;
         } else {
             term = QuerySpec.of(arg.gav).toString();
-            toString = d -> d.id() + ":" + d.latestVersion();
+            core = "gav";
         }
 
         int start = 0;
         int remaining = -1;
 
         while (true) {
-            var req = new SolrSearchRequest(term, null, null, start, 20);
+            var req = new SolrSearchRequest(term, core, null, start, 20);
             var resp = solr.search(req).response();
-            var map = resp.docs().stream().collect(toMap(toString, Document::timestamp));
+            var map = resp.docs().stream().collect(toMap(Document::id, Document::timestamp));
             var width = map.keySet().stream().mapToInt(String::length).max().orElse(0);
             var format = "%-" + width + "s %15s";
 
