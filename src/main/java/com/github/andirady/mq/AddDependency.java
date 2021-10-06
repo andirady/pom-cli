@@ -135,6 +135,10 @@ public class AddDependency implements Runnable {
         elem.appendChild(doc.createElement("artifactId")).setTextContent(spec.artifactId());
         elem.appendChild(doc.createElement("version")).setTextContent(spec.version());
 
+        if (scope == null) {
+            return elem;
+        }
+
         String text = null;
         if (scope.runtime) {
             text = "runtime";
