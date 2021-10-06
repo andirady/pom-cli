@@ -1,10 +1,9 @@
 package com.github.andirady.mq;
 
-
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(name = "mq", subcommands = {AddDependency.class, Search.class})
+@Command(name = "mq", subcommandsRepeatable = true, subcommands = {IdCommand.class, AddCommand.class, Search.class})
 public class Main {
 
 	public static void main(String[] args) {

@@ -5,6 +5,9 @@ Maven Query and more
 ## Example usage
 
 ```bash
+# Set project ID
+mq id com.example:my-app
+mq id com.example:my-webapp --as=war
 # Add to pom.xml
 # If pom.xml does not exists yet, create a new one.
 mq add info.picocli:picocli
