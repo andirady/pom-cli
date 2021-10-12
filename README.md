@@ -26,6 +26,16 @@ mq search --full-class org.apache.logging.log4j.Logger
 mq search -fc org.apache.logging.log4j.Logger
 ```
 
+## Building 
+
+This project requires Java 17+, and Maven 3.8.2+.
+You can use [sdkman](https://sdkman.io/) to download them.
+
+To build, run
+```
+mvn package
+```
+
 ## TODO
 
 1. The `add` subcommand should not proceed if `groupId:artifactId` already exists in the pom
