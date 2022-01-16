@@ -3,7 +3,7 @@ package com.github.andirady.pomcli;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(name = "mq", subcommandsRepeatable = true, subcommands = {IdCommand.class, AddCommand.class, Search.class})
+@Command(name = "pom", subcommandsRepeatable = true, subcommands = {IdCommand.class, AddCommand.class, SearchCommand.class})
 public class Main {
 
 	public static void main(String[] args) {

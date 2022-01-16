@@ -14,7 +14,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "search")
-public class Search implements Runnable {
+public class SearchCommand implements Runnable {
 
     @ArgGroup(exclusive = true, multiplicity = "1")
     Exclusive arg;
