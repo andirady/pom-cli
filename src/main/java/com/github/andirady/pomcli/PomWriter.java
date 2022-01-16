@@ -1,4 +1,4 @@
-package com.github.andirady.mq;
+package com.github.andirady.pomcli;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

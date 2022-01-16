@@ -1,9 +1,9 @@
-package com.github.andirady.mq;
+package com.github.andirady.pomcli;
 
 
-import com.github.andirady.mq.solrsearch.SolrSearch;
-import com.github.andirady.mq.solrsearch.SolrSearchRequest;
-import com.github.andirady.mq.solrsearch.SolrSearchResult;
+import com.github.andirady.pomcli.solrsearch.SolrSearch;
+import com.github.andirady.pomcli.solrsearch.SolrSearchRequest;
+import com.github.andirady.pomcli.solrsearch.SolrSearchResult;
 import java.util.Optional;
 
 public class GetLatestVersion {

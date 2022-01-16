@@ -1,6 +1,6 @@
 [
   {
-    "name": "com.github.andirady.mq.solrsearch.SolrSearchRequest",
+    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchRequest",
     "methods": [
       {
         "name": "<init>",
@@ -35,12 +35,12 @@
     ]
   },
   {
-    "name": "com.github.andirady.mq.solrsearch.SolrSearchResult",
+    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchResult",
     "methods": [
       {
         "name": "<init>",
         "parameterTypes": [
-          "com.github.andirady.mq.solrsearch.SolrSearchResult$Response"
+          "com.github.andirady.pomcli.solrsearch.SolrSearchResult$Response"
         ]
       },
       {
@@ -50,7 +50,7 @@
     ]
   },
   {
-    "name": "com.github.andirady.mq.solrsearch.SolrSearchResult$Response",
+    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchResult$Response",
     "methods": [
       {
         "name": "<init>",
@@ -75,7 +75,7 @@
     ]
   },
   {
-    "name": "com.github.andirady.mq.solrsearch.SolrSearchResult$Document",
+    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchResult$Document",
     "methods": [
       {
         "name": "<init>",

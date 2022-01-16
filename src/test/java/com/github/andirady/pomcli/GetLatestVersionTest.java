@@ -1,4 +1,4 @@
-package com.github.andirady.mq;
+package com.github.andirady.pomcli;
 
 import static org.junit.jupiter.api.Assertions.*;
 

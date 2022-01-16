@@ -1,4 +1,4 @@
-package com.github.andirady.mq.solrsearch;
+package com.github.andirady.pomcli.solrsearch;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

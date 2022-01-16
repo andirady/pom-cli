@@ -1,14 +1,14 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.github.andirady.mq</groupId>
-    <artifactId>mq</artifactId>
+    <groupId>com.github.andirady.pomcli</groupId>
+    <artifactId>pomcli</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>16</maven.compiler.source>
         <maven.compiler.target>16</maven.compiler.target>
         <picocli.version>4.6.1</picocli.version>
-        <exec.mainClass>com.github.andirady.mq.Main</exec.mainClass>
+        <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
     </properties>
     <dependencies>
         <dependency>
@@ -48,7 +48,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
                 <configuration>
-                    <argLine>--add-opens com.github.andirady.mq/com.github.andirady.mq=ALL-UNNAMED</argLine>
+                    <argLine>--add-opens com.github.andirady.pomcli/com.github.andirady.pomcli=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -96,8 +96,8 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <imageName>mq</imageName>
-                            <mainClass>com.github.andirady.mq.Main</mainClass>
+                            <imageName>pom</imageName>
+                            <mainClass>com.github.andirady.pomcli.Main</mainClass>
                             <buildArgs>
 								--enable-http
 								--enable-https
@@ -129,7 +129,7 @@
                                 <configuration>
                                     <classifier>jlink</classifier>
                                     <modulePaths>${project.build.directory}/modules</modulePaths>
-                                    <launcher>mq=com.github.andirady.mq/com.github.andirady.mq.Main</launcher>
+                                    <launcher>pom=com.github.andirady.pomcli/com.github.andirady.pomcli.Main</launcher>
                                 </configuration>
                             </execution>
                         </executions>

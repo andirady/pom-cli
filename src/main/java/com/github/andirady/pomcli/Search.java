@@ -1,12 +1,12 @@
-package com.github.andirady.mq;
+package com.github.andirady.pomcli;
 
 import static java.util.stream.Collectors.toMap;
 
 import java.util.StringJoiner;
 
-import com.github.andirady.mq.solrsearch.SolrSearch;
-import com.github.andirady.mq.solrsearch.SolrSearchRequest;
-import com.github.andirady.mq.solrsearch.SolrSearchResult.Document;
+import com.github.andirady.pomcli.solrsearch.SolrSearch;
+import com.github.andirady.pomcli.solrsearch.SolrSearchRequest;
+import com.github.andirady.pomcli.solrsearch.SolrSearchResult.Document;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;

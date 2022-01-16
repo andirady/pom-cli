@@ -1,4 +1,4 @@
-package com.github.andirady.mq;
+package com.github.andirady.pomcli;
 
 public class Pom {
 

@@ -1,4 +1,4 @@
-package com.github.andirady.mq;
+package com.github.andirady.pomcli;
 
 import java.io.IOException;
 import java.nio.file.Path;
