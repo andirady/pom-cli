@@ -1,117 +1,167 @@
 [
-  {
-    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchRequest",
-    "methods": [
-      {
-        "name": "<init>",
-        "parameterTypes": [
-          "java.lang.String",
-          "java.lang.String",
-          "java.lang.String",
-          "int",
-          "int"
-        ]
-      },
-      {
-        "name": "q",
-        "parameterTypes": []
-      },
-      {
-        "name": "core",
-        "parameterTypes": []
-      },
-      {
-        "name": "sort",
-        "parameterTypes": []
-      },
-      {
-        "name": "start",
-        "parameterTypes": []
-      },
-      {
-        "name": "rows",
-        "parameterTypes": []
-      }
-    ]
-  },
-  {
-    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchResult",
-    "methods": [
-      {
-        "name": "<init>",
-        "parameterTypes": [
-          "com.github.andirady.pomcli.solrsearch.SolrSearchResult$Response"
-        ]
-      },
-      {
-        "name": "response",
-        "parameterTypes": []
-      }
-    ]
-  },
-  {
-    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchResult$Response",
-    "methods": [
-      {
-        "name": "<init>",
-        "parameterTypes": [
-          "int",
-          "int",
-          "java.util.List"
-        ]
-      },
-      {
-        "name": "numFound",
-        "parameterTypes": []
-      },
-      {
-        "name": "start",
-        "parameterTypes": []
-      },
-      {
-        "name": "docs",
-        "parameterTypes": []
-      }
-    ]
-  },
-  {
-    "name": "com.github.andirady.pomcli.solrsearch.SolrSearchResult$Document",
-    "methods": [
-      {
-        "name": "<init>",
-        "parameterTypes": [
-          "java.lang.String",
-          "java.lang.String",
-          "java.lang.String",
-          "java.lang.String",
-          "java.lang.String",
-          "long"
-        ]
-      },
-      {
-        "name": "id",
-        "parameterTypes": []
-      },
-      {
-        "name": "g",
-        "parameterTypes": []
-      },
-      {
-        "name": "a",
-        "parameterTypes": []
-      },
-      {
-        "name": "v",
-        "parameterTypes": []
-      },
-      {
-        "name": "latestVersion",
-        "parameterTypes": []
-      },
-      {
-        "name": "timestamp",
-        "parameterTypes": []
-      }
-    ]
-  }
+{
+  "name":"com.github.andirady.pomcli.AddCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.github.andirady.pomcli.AddCommand$Scope",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
+,
+{
+  "name":"com.github.andirady.pomcli.IdCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.github.andirady.pomcli.Main",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
+,
+{
+  "name":"com.github.andirady.pomcli.SearchCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.github.andirady.pomcli.SearchCommand$Exclusive",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
+,
+{
+  "name":"com.github.andirady.pomcli.solrsearch.SolrSearchRequest",
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","int","int"] }, 
+    {"name":"core","parameterTypes":[] }, 
+    {"name":"q","parameterTypes":[] }, 
+    {"name":"rows","parameterTypes":[] }, 
+    {"name":"sort","parameterTypes":[] }, 
+    {"name":"start","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"com.github.andirady.pomcli.solrsearch.SolrSearchResult",
+  "methods":[
+    {"name":"<init>","parameterTypes":["com.github.andirady.pomcli.solrsearch.SolrSearchResult$Response"] }, 
+    {"name":"response","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"com.github.andirady.pomcli.solrsearch.SolrSearchResult$Document",
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","java.lang.String","java.lang.String","long"] }, 
+    {"name":"a","parameterTypes":[] }, 
+    {"name":"g","parameterTypes":[] }, 
+    {"name":"id","parameterTypes":[] }, 
+    {"name":"latestVersion","parameterTypes":[] }, 
+    {"name":"timestamp","parameterTypes":[] }, 
+    {"name":"v","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"com.github.andirady.pomcli.solrsearch.SolrSearchResult$Response",
+  "methods":[
+    {"name":"<init>","parameterTypes":["int","int","java.util.List"] }, 
+    {"name":"docs","parameterTypes":[] }, 
+    {"name":"numFound","parameterTypes":[] }, 
+    {"name":"start","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"java.lang.Object",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true}
+,
+{
+  "name":"java.lang.System",
+  "methods":[{"name":"console","parameterTypes":[] }]}
+,
+{
+  "name":"java.nio.file.Path"}
+,
+{
+  "name":"java.nio.file.Paths",
+  "queriedMethods":[{"name":"get","parameterTypes":["java.lang.String","java.lang.String[]"] }]}
+,
+{
+  "name":"java.sql.Connection"}
+,
+{
+  "name":"java.sql.Driver"}
+,
+{
+  "name":"java.sql.DriverManager",
+  "queriedMethods":[
+    {"name":"getConnection","parameterTypes":["java.lang.String"] }, 
+    {"name":"getDriver","parameterTypes":["java.lang.String"] }
+  ]}
+,
+{
+  "name":"java.sql.Time",
+  "queriedMethods":[{"name":"<init>","parameterTypes":["long"] }]}
+,
+{
+  "name":"java.sql.Timestamp",
+  "queriedMethods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]}
+,
+{
+  "name":"java.time.Duration",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.Instant",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.LocalDate",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.LocalDateTime",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.LocalTime",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.MonthDay",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.OffsetDateTime",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.OffsetTime",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.Period",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.Year",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.YearMonth",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+,
+{
+  "name":"java.time.ZoneId",
+  "queriedMethods":[{"name":"of","parameterTypes":["java.lang.String"] }]}
+,
+{
+  "name":"java.time.ZoneOffset",
+  "queriedMethods":[{"name":"of","parameterTypes":["java.lang.String"] }]}
+,
+{
+  "name":"java.time.ZonedDateTime",
+  "queriedMethods":[{"name":"parse","parameterTypes":["java.lang.CharSequence"] }]}
+
 ]

@@ -18,7 +18,7 @@ class IdCommandTest {
 
     @BeforeEach
     void setup() throws IOException {
-        tempDir = Files.createTempDirectory("mq-test");
+        tempDir = Files.createTempDirectory("pomcli-test");
     }
 
     @Test
@@ -86,10 +86,13 @@ class IdCommandTest {
         assertEquals("pom com.example:my-app:0.0.1-SNAPSHOT", cmd.readProjectId());
     }
 
+    @Test
+    void shouldAddParentIfAPomProjectIsFoundAboveTheDirectoryTree() throws Exception {
+    }
+
     @AfterEach
     void cleanup() throws IOException {
         Files.walk(tempDir).map(Path::toFile).forEach(File::delete);
-        Files.delete(tempDir);
     }
 
 }

@@ -1,11 +1,14 @@
 {
-  "resources": {
-    "includes": [
-      {"pattern": "\\Qpom.xlst\\E"}
-    ]
-  },
+  "resources":{
+  "includes":[{
+      "pattern":"\\Qpom.xlst\\E"
+    }]},
   "bundles":[
-    {"name":"com.sun.org.apache.xalan.internal.xsltc.runtime.ErrorMessages"},
-    {"name":"com.sun.org.apache.xml.internal.serializer.XMLEntities"}
+    {
+      "name":"com.sun.org.apache.xalan.internal.xsltc.runtime.ErrorMessages"
+    }, 
+    {
+      "name":"com.sun.org.apache.xml.internal.serializer.XMLEntities"
+    }
   ]
 }

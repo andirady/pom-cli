@@ -1,5 +1,6 @@
 package com.github.andirady.pomcli;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -12,6 +13,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.DefaultModelReader;
+import org.apache.maven.model.io.DefaultModelWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -53,105 +58,50 @@ public class AddCommand implements Runnable {
     Scope scope;
 
     @Parameters(arity = "1..*", paramLabel = "groupId:artifactId[:version]")
-    List<QuerySpec> coords;
+    List<Dependency> coords;
 
     @Spec
     CommandSpec spec;
 
     @Override
     public void run() {
-        Document doc;
-        Node projectElem;
-
-        try {
-            var dbf = DocumentBuilderFactory.newInstance();
-            var db = dbf.newDocumentBuilder();
-            if (Files.exists(pomPath)) {
-                try (var is = Files.newInputStream(pomPath)) {
-                    doc = db.parse(is);
-                }
-
-                projectElem = doc.getElementsByTagName("project").item(0);
-                if (projectElem == null) {
-                    throw new IllegalArgumentException("Invalid pom file. No <project> element found.");
-                }
-            } else {
-                LOG.fine(() -> pomPath + " does not exists. Creating a new one");
-                doc = db.newDocument();
-                projectElem = doc.appendChild(doc.createElement("project"));
-                projectElem.appendChild(doc.createElement("modelVersion")).setTextContent("4.0.0");
-
-                var groupId = "unnamed";
-                var artifactId = Path.of(System.getProperty("user.dir")).getFileName().toString();
-                var version = "0.0.1-SNAPSHOT";
-
-                projectElem.appendChild(doc.createElement("groupId")).setTextContent(groupId);
-                projectElem.appendChild(doc.createElement("artifactId")).setTextContent(artifactId);
-                projectElem.appendChild(doc.createElement("version")).setTextContent(version);
+        Model model;
+        if (Files.exists(pomPath)) {
+            var reader = new DefaultModelReader();
+            try {
+                model = reader.read(pomPath.toFile(), null);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+        } else {
+            LOG.fine(() -> pomPath + " does not exists. Creating a new one");
+            model = new Model();
+            model.setModelVersion("4.0.0");
+            model.setGroupId("unnamed");
+            model.setArtifactId(Path.of(System.getProperty("user.dir")).getFileName().toString());
+            model.setVersion("0.0.1-SNAPSHOT");
+        }
 
-            var depsElem = (Element) doc.getElementsByTagName("dependencies").item(0);
-            if (depsElem == null) {
-                depsElem = doc.createElement("dependencies");
-                projectElem.appendChild(depsElem);
-            }
-
-            coords.stream().parallel().map(this::ensureVersion).map(s -> toElement(doc, s))
-                    .forEachOrdered(depsElem::appendChild);
-
-            var tf = TransformerFactory.newInstance();
-            Transformer transformer;
-            try (var xlst = getClass().getClassLoader().getResourceAsStream("pom.xlst")) {
-                if (xlst == null) {
-                    throw new IllegalStateException("Fail to read pom.xlst from classpath");
-                }
-                transformer = tf.newTransformer(new StreamSource(xlst));
-            }
-            var domSource = new DOMSource(doc);
-            try (var os = Files.newOutputStream(pomPath)) {
-                var streamResult = new StreamResult(os);
-                transformer.transform(domSource, streamResult);
-            }
-        } catch (PicocliException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
+        var deps = coords.stream().parallel().map(this::ensureVersion).toList();
+		model.getDependencies().addAll(deps);
+	
+        var writer = new DefaultModelWriter();
+		try (var os = Files.newOutputStream(pomPath)) {
+            writer.write(os, null, model);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    QuerySpec ensureVersion(QuerySpec coord) {
-        if (coord.version() == null) {
-            var latestVersion = new GetLatestVersion().execute(coord);
-            return latestVersion.map(v -> new QuerySpec(coord.groupId(), coord.artifactId(), v))
-                    .orElseThrow(() -> new ExecutionException(spec.commandLine(),
-                            "No version found: '" + coord.groupId() + ":" + coord.artifactId() + "'"));
-        }
-        return coord;
-    }
+	Dependency ensureVersion(Dependency d) {
+		if (d.getVersion() == null) {
+            var latestVersion = new GetLatestVersion().execute(new QuerySpec(d.getGroupId(), d.getArtifactId(), null));
+            d.setVersion(latestVersion.orElseThrow(() -> new ExecutionException(
+                    spec.commandLine(), "No version found: '" + d.getGroupId() + ":" + d.getArtifactId() + "'")
+                ));
+		}
 
-    Element toElement(Document doc, QuerySpec spec) {
-        var elem = doc.createElement("dependency");
-        elem.appendChild(doc.createElement("groupId")).setTextContent(spec.groupId());
-        elem.appendChild(doc.createElement("artifactId")).setTextContent(spec.artifactId());
-        elem.appendChild(doc.createElement("version")).setTextContent(spec.version());
+        return d;
+	}
 
-        if (scope == null) {
-            return elem;
-        }
-
-        String text = null;
-        if (scope.runtime) {
-            text = "runtime";
-        } else if (scope.provided) {
-            text = "provided";
-        } else if (scope.test) {
-            text = "test";
-        }
-
-        if (text != null) {
-            elem.appendChild(doc.createElement("scope")).setTextContent(text);
-        }
-
-        return elem;
-    }
 }

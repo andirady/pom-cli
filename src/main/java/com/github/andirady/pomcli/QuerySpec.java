@@ -9,16 +9,12 @@ public record QuerySpec(String groupId, String artifactId, String version) {
 
 	static QuerySpec of(String spec) {
 		var parts = spec.split(":");
-		switch (parts.length) {
-			case 1 :
-				return new QuerySpec(null, parts[0], null);
-			case 2 :
-				return new QuerySpec(parts[0], parts[1], null);
-			case 3 :
-				return new QuerySpec(parts[0], parts[1], parts[2]);
-			default :
-				throw new IllegalArgumentException("Invalid spec: " + spec);
-		}
+		return switch (parts.length) {
+			case 1 -> new QuerySpec(null, parts[0], null);
+			case 2 -> new QuerySpec(parts[0], parts[1], null);
+			case 3 -> new QuerySpec(parts[0], parts[1], parts[2]);
+			default -> throw new IllegalArgumentException("Invalid spec: " + spec);
+		};
 	}
 
 	public URI toURI() {

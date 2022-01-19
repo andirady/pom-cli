@@ -32,6 +32,11 @@
             <version>2.12.5</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-model-builder</artifactId>
+            <version>3.8.4</version>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>5.8.0</version>
@@ -55,13 +60,63 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>--upgrade-module-path</arg>
+                        <arg>${project.build.directory}/modules</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M5</version>
-                <configuration>
-                    <argLine>--add-opens com.github.andirady.pomcli/com.github.andirady.pomcli=ALL-UNNAMED</argLine>
-                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.moditect</groupId>
+                <artifactId>moditect-maven-plugin</artifactId>
+                <version>1.0.0.RC2</version>
+                <executions>
+                    <execution>
+                        <id>add-module-info</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-module-info</goal>
+                        </goals>
+                        <configuration>
+                            <overwriteExistingFiles>true</overwriteExistingFiles>
+                            <outputDirectory>${project.build.directory}/modules</outputDirectory>
+                            <modules>
+                                <module>
+                                    <artifact>
+                                        <groupId>org.apache.maven</groupId>
+                                        <artifactId>maven-model</artifactId>
+                                        <version>3.8.4</version>
+                                    </artifact>
+                                    <moduleInfoSource>
+                                        module maven.model {
+                                            exports org.apache.maven.model;
+                                            exports org.apache.maven.model.io.xpp3;
+                                            exports org.apache.maven.model.merge;
+                                        }
+                                    </moduleInfoSource>
+                                </module>
+                                <module>
+                                    <artifact>
+                                        <groupId>org.apache.maven</groupId>
+                                        <artifactId>maven-model-builder</artifactId>
+                                        <version>3.8.4</version>
+                                    </artifact>
+                                    <moduleInfoSource>
+                                        module maven.model.builder {
+                                            requires transitive maven.model;
+                                            exports org.apache.maven.model.io;
+                                        }
+                                    </moduleInfoSource>
+                                </module>
+                            </modules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -77,6 +132,7 @@
                 <graalvm.version>21.2.0</graalvm.version>
             </properties>
             <build>
+                <defaultGoal>package</defaultGoal>
                 <plugins>
                     <plugin>
                         <artifactId>maven-compiler-plugin</artifactId>
@@ -96,6 +152,22 @@
                         </configuration>
                     </plugin>
                     <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <phase>process-classes</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <commandLineArgs>-agentlib:native-image-agent=config-merge-dir=${basedir}/src/main/resources/META-INF/${project.groupId}/${project.artifactId}</commandLineArgs>
+                        </configuration>
+                    </plugin>
+                    <plugin>
                         <groupId>org.graalvm.nativeimage</groupId>
                         <artifactId>native-image-maven-plugin</artifactId>
                         <version>${graalvm.version}</version>
@@ -109,7 +181,7 @@
                         </executions>
                         <configuration>
                             <imageName>pom</imageName>
-                            <mainClass>com.github.andirady.pomcli.Main</mainClass>
+                            <mainClass>${exec.mainClass}</mainClass>
                             <buildArgs>
 								--enable-http
 								--enable-https
@@ -123,9 +195,6 @@
         </profile>
         <profile>
             <id>jlink</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <build>
                 <plugins>
                     <plugin>

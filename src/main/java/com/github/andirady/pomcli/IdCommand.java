@@ -1,7 +1,11 @@
 package com.github.andirady.pomcli;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.DefaultModelReader;
+import org.apache.maven.model.io.DefaultModelWriter;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.Model.CommandSpec;
@@ -38,13 +42,13 @@ public class IdCommand implements Runnable {
     }
 
     String readProjectId() throws Exception {
-        var pomReader = new PomReader();
-        var pom = pomReader.readPom(pomPath);
+        var pomReader = new DefaultModelReader();
+        var pom = pomReader.read(pomPath.toFile(), null);
         return pom.getPackaging() + " " + pom.getGroupId() + ":" + pom.getArtifactId() + ":" + pom.getVersion();
     }
 
     private void updatePom() throws Exception {
-        var pom = new Pom();
+        var pom = new Model();
         var parts = id.split(":", 3);
         
         if (parts.length >= 2) {
@@ -65,8 +69,8 @@ public class IdCommand implements Runnable {
             pom.setPackaging(as);
         }
 
-        var pomWriter = new PomWriter();
-        pomWriter.write(pom, pomPath);
+        var pomWriter = new DefaultModelWriter();
+        pomWriter.write(pomPath.toFile(), null, pom);
     }
 
 }
