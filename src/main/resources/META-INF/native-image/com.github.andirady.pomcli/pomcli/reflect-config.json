@@ -9,7 +9,10 @@
   "name":"com.github.andirady.pomcli.AddCommand$Scope",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]}
+  "methods":[
+    {"name":"<init>","parameterTypes":[] }, 
+    {"name":"value","parameterTypes":[] }
+  ]}
 ,
 {
   "name":"com.github.andirady.pomcli.IdCommand",

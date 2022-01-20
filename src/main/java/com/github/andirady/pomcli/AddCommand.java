@@ -49,6 +49,14 @@ public class AddCommand implements Runnable {
         @Option(names = "--test", description = "Add as test dependency", order = 3)
         boolean test;
 
+        String value() {
+            if (runtime)  return "runtime";
+            if (provided) return "provide";
+            if (test)     return "test";
+
+            return "compile";
+        }
+
     }
 
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml", order = 0)
@@ -82,7 +90,14 @@ public class AddCommand implements Runnable {
             model.setVersion("0.0.1-SNAPSHOT");
         }
 
-        var deps = coords.stream().parallel().map(this::ensureVersion).toList();
+        var stream = coords.stream().parallel().map(this::ensureVersion);
+        if (scope != null && !"compile".equals(scope.value())) {
+            stream = stream.map(d -> {
+                d.setScope(scope.value());
+                return d;
+            });
+        }
+        var deps = stream.toList();
 		model.getDependencies().addAll(deps);
 	
         var writer = new DefaultModelWriter();
