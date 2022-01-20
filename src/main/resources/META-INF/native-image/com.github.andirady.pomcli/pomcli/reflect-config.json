@@ -30,7 +30,8 @@
 {
   "name":"com.github.andirady.pomcli.SearchCommand$Exclusive",
   "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true}
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
   "name":"com.github.andirady.pomcli.solrsearch.SolrSearchRequest",
@@ -85,7 +86,7 @@
 ,
 {
   "name":"java.nio.file.Paths",
-  "queriedMethods":[{"name":"get","parameterTypes":["java.lang.String","java.lang.String[]"] }]}
+  "methods":[{"name":"get","parameterTypes":["java.lang.String","java.lang.String[]"] }]}
 ,
 {
   "name":"java.sql.Connection"}
