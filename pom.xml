@@ -152,19 +152,27 @@
                         </configuration>
                     </plugin>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
+                        <artifactId>maven-antrun-plugin</artifactId>
                         <version>3.0.0</version>
                         <executions>
                             <execution>
+                                <id>generate-nativeimage-configs</id>
                                 <phase>process-classes</phase>
                                 <goals>
-                                    <goal>java</goal>
+                                    <goal>run</goal>
                                 </goals>
                             </execution>
                         </executions>
                         <configuration>
-                            <commandLineArgs>-agentlib:native-image-agent=config-merge-dir=${basedir}/src/main/resources/META-INF/${project.groupId}/${project.artifactId}</commandLineArgs>
+                            <target>
+                                <java className="${exec.mainClass}" fork="true">
+                                    <classpath>
+                                        <path refid="maven.compile.classpath" />
+                                    </classpath>
+                                    <jvmarg value="-agentlib:native-image-agent=config-merge-dir=${basedir}/src/main/resources/META-INF/native-image/${project.groupId}/${project.artifactId}" />
+                                    <arg line="id" />
+                                </java>
+                            </target>
                         </configuration>
                     </plugin>
                     <plugin>
