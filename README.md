@@ -13,6 +13,12 @@ pom id com.example:my-webapp --as=war
 pom add info.picocli:picocli
 # Add test dependency
 pom add --test org.junit.jupiter:junit-jupiter
+# Set single property
+pom set maven.compiler.source=17
+# Set multiple properties
+pom set maven.compiler.source=17 maven.compiler.source=17
+# Set multiple properties leveraging shell expansion
+pom set maven.compiler.{source,target}=17
 
 # Search
 pom search log4j-api

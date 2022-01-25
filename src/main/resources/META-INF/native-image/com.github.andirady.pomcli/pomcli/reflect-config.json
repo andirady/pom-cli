@@ -38,6 +38,26 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
+  "name":"com.github.andirady.pomcli.SetCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.github.andirady.pomcli.SetCommand$Property",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }, 
+    {"name":"key","parameterTypes":[] }, 
+    {"name":"value","parameterTypes":[] }
+  ]}
+,
+{
+  "name":"com.github.andirady.pomcli.SetCommand$PropertyConverter",
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.github.andirady.pomcli.solrsearch.SolrSearchRequest",
   "methods":[
     {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","int","int"] }, 

@@ -4,7 +4,7 @@ import org.apache.maven.model.Dependency;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(name = "pom", subcommandsRepeatable = true, subcommands = {IdCommand.class, AddCommand.class, SearchCommand.class})
+@Command(name = "pom", subcommandsRepeatable = true, subcommands = {IdCommand.class, AddCommand.class, SearchCommand.class, SetCommand.class})
 public class Main {
 
 	public static void main(String[] args) {
