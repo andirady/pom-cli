@@ -41,9 +41,3 @@ To build, run
 ```
 mvn package
 ```
-
-## TODO
-
-1. The `add` subcommand should not proceed if `groupId:artifactId` already exists in the pom
-2. Add `run` subcommand
-3. Add `jshell` subcommand
