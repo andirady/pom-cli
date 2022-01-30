@@ -1,9 +1,12 @@
 package com.github.andirady.pomcli;
 
+import static java.util.stream.Collectors.joining;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -76,8 +79,8 @@ public class AddCommand implements Runnable {
         Model model;
         if (Files.exists(pomPath)) {
             var reader = new DefaultModelReader();
-            try {
-                model = reader.read(pomPath.toFile(), null);
+            try (var is = Files.newInputStream(pomPath)) {
+                model = reader.read(is, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -90,6 +93,15 @@ public class AddCommand implements Runnable {
             model.setVersion("0.0.1-SNAPSHOT");
         }
 
+        var existing = model.getDependencies();
+        var duplicates = coords.stream()
+                               .filter(c -> existing.stream().anyMatch(d -> sameArtifact(c, d)))
+                               .map(this::coordString)
+                               .collect(joining(", "));
+        if (duplicates.length() > 0) {
+            throw new IllegalArgumentException("Duplicate artifact(s): " + duplicates);
+        }
+
         var stream = coords.stream().parallel().map(this::ensureVersion);
         if (scope != null && !"compile".equals(scope.value())) {
             stream = stream.map(d -> {
@@ -97,8 +109,9 @@ public class AddCommand implements Runnable {
                 return d;
             });
         }
+
         var deps = stream.toList();
-		model.getDependencies().addAll(deps);
+        existing.addAll(deps);
 	
         var writer = new DefaultModelWriter();
 		try (var os = Files.newOutputStream(pomPath)) {
@@ -118,5 +131,19 @@ public class AddCommand implements Runnable {
 
         return d;
 	}
+
+    boolean sameArtifact(Dependency d1, Dependency d2) {
+        var g = d1.getGroupId().equals(d2.getGroupId());
+        var a = d1.getArtifactId().equals(d2.getArtifactId());
+        var classfifier = (d1.getClassifier() != null && d1.getClassifier().equals(d2.getClassifier()))
+                || (d1.getClassifier() == d2.getClassifier()); // null
+        return g && a && classfifier;
+    }
+
+    String coordString(Dependency d) {
+        return d.getGroupId() + ":"
+             + d.getArtifactId()
+             + Optional.ofNullable(d.getClassifier()).map(c -> ":" + c).orElse("");
+    }
 
 }

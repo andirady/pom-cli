@@ -71,4 +71,74 @@ class AddCommandTest {
         assertNotNull(matcher);
         assertTrue(matcher.find());
     }
+
+    @Test
+    void shouldFailIfAlreadAdded() throws Exception {
+        var pomPath = fs.getPath("pom.xml");
+        Files.writeString(pomPath, """
+            <project>
+                <dependencies>
+                    <dependency>
+                        <groupId>g</groupId>
+                        <artifactId>a</artifactId>
+                        <version>1</version>
+                    </dependency>
+                </dependencies>
+            </project>
+            """);
+
+        var cmd = new AddCommand();
+        cmd.pomPath = pomPath;
+        cmd.coords = new ArrayList<>();
+        var d = new Dependency();
+        d.setGroupId("g");
+        d.setArtifactId("a");
+        d.setVersion("2");
+        cmd.coords.add(d);
+        var e = assertThrows(Exception.class, cmd::run);
+        assertEquals("Duplicate artifact(s): g:a", e.getMessage());
+    }
+
+    @Test
+    void shouldFailIfMultipleAlreadAdded() throws Exception {
+        var pomPath = fs.getPath("pom.xml");
+        Files.writeString(pomPath, """
+            <project>
+                <dependencies>
+                    <dependency>
+                        <groupId>a</groupId>
+                        <artifactId>a</artifactId>
+                        <version>1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>b</groupId>
+                        <artifactId>b</artifactId>
+                        <version>1</version>
+                    </dependency>
+                </dependencies>
+            </project>
+            """);
+
+        var cmd = new AddCommand();
+        cmd.pomPath = pomPath;
+        cmd.coords = new ArrayList<>();
+        var d = new Dependency();
+        d.setGroupId("a");
+        d.setArtifactId("a");
+        d.setVersion("2");
+        cmd.coords.add(d);
+        d = new Dependency();
+        d.setGroupId("b");
+        d.setArtifactId("b");
+        d.setVersion("2");
+        cmd.coords.add(d);
+        d = new Dependency();
+        d.setGroupId("c");
+        d.setArtifactId("c");
+        d.setVersion("2");
+        cmd.coords.add(d);
+
+        var e = assertThrows(Exception.class, cmd::run);
+        assertEquals("Duplicate artifact(s): a:a, b:b", e.getMessage());
+    }
 }
