@@ -24,7 +24,7 @@ class IdCommandTest {
     FileSystem fs;
 
     @BeforeEach
-    void setup() throws IOException {
+    void setup() {
         fs = Jimfs.newFileSystem();
         cmd = new IdCommand();
     }
@@ -51,6 +51,20 @@ class IdCommandTest {
 
         var s = Files.readString(pomPath);
         assertTrue(s.contains("<modelVersion>4.0.0</modelVersion>"));
+    }
+
+    @Test
+    void shouldSetJavaVersionIfCreatingNewPom() throws IOException {
+        var pomPath = fs.getPath("pom.xml");
+        var projectId = "com.example:my-app:0.0.1";
+
+        cmd.pomPath = pomPath;
+        cmd.id = projectId;
+        cmd.run();
+
+        var s = Files.readString(pomPath);
+        assertTrue(s.contains("<maven.compiler.source>"));
+        assertTrue(s.contains("<maven.compiler.target>"));
     }
 
     @Test

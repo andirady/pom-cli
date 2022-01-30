@@ -72,17 +72,7 @@ public class IdCommand implements Runnable {
                 pom = reader.read(is, null);
             }
         } else {
-            pom = new Model();
-            pom.setModelVersion("4.0.0");
-            var parentPom = findParentPom(new DefaultModelReader());
-            if (parentPom != null) {
-                var parent = new Parent();
-                parent.setGroupId(parentPom.model().getGroupId());
-                parent.setArtifactId(parentPom.model().getArtifactId());
-                parent.setVersion(parentPom.model().getVersion());
-                parent.setRelativePath(pomPath.relativize(parentPom.path().getParent()).toString());
-                pom.setParent(parent);
-            }
+            pom = new NewPom().newPom(pomPath);
         }
 
         var parts = id.split(":", 3);
@@ -115,35 +105,6 @@ public class IdCommand implements Runnable {
         try (var os = Files.newOutputStream(pomPath)) {
             pomWriter.write(os, null, pom);
         }
-    }
-
-    record ParentPom(Path path, Model model) {
-    }
-
-    private ParentPom findParentPom(ModelReader pomReader) throws Exception {
-        var parent = pomPath.getParent();
-        // To facilitate test:
-        if (parent == null) {
-            return null;
-        }
-        // Try to find pom.xml with packaging 'pom' up until 5 ancestor folders.
-        for (var i = 0; i < 5; i++) {
-            parent = parent.getParent();
-            if (parent == null) {
-                return null;
-            }
-            var parentPomPath = parent.resolve("pom.xml");
-            if (Files.exists(parentPomPath)) {
-                try (var is = Files.newInputStream(parentPomPath)) {
-                    var pom = pomReader.read(is, null);
-                    if ("pom".equals(pom.getPackaging())) {
-                        return new ParentPom(parentPomPath, pom);
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
 }
