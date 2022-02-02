@@ -54,9 +54,10 @@ public class SearchCommand implements Runnable {
         int start = 0;
         int remaining = -1;
         int width = 0;
+        var loop = true;
 
-        while (true) {
-            var req = new SolrSearchRequest(term, core, null, start, 20);
+        while (loop) {
+            var req = new SolrSearchRequest(term, core, null, start, 40);
             var resp = solr.search(req).response();
             var docs = resp.docs();
             var w = docs.stream().map(Document::id).mapToInt(String::length).max().orElse(0);
@@ -71,25 +72,31 @@ public class SearchCommand implements Runnable {
                 remaining = resp.numFound();
             }
 
-            var stream = docs.stream();
-            if (sort) {
-                stream = stream.sorted(Comparator.comparingLong(Document::timestamp).reversed());
-            }
-            System.out.println(
-                    stream.map(d -> String.format(format, d.id(), new Age(d.timestamp())))
-                          .collect(joining(System.lineSeparator()))
-                );
-            
-            remaining -= 20;
-            start += 20;
+            for (var i = 0; i < 2; i++) {
+                var stream = docs.stream();
+                if (sort) {
+                    stream = stream.sorted(Comparator.comparingLong(Document::timestamp).reversed());
+                }
 
-            if (remaining <= 0) {
-                System.out.printf("%n");
-                break;
-            }
+                System.out.print(
+                        stream.skip(i * 20)
+                              .limit(20)
+                              .map(d -> String.format(format, d.id(), new Age(d.timestamp())))
+                              .collect(joining(System.lineSeparator()))
+                    );
+                
+                remaining -= 20;
+                start += 20;
 
-            System.console().readLine("\r");
-            System.out.print("\r");
+                if (remaining <= 0) {
+                    System.out.printf("%n");
+                    loop = false;
+                    break;
+                }
+
+                System.console().readLine("\r");
+                System.out.print("\r");
+            }
         }
     }
 }
