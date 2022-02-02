@@ -49,7 +49,6 @@ class SearchCommandTest {
 					Found 2
 					g:a:2       a day ago
 					g:a:1      3 days ago
-					 
 					""".replaceAll("\n", System.lineSeparator()), baos.toString());
 		}
 	}
