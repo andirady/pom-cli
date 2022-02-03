@@ -3,14 +3,10 @@ package com.github.andirady.pomcli;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import java.util.Optional;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
-import org.apache.maven.model.io.ModelReader;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;

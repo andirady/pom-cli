@@ -9,20 +9,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -30,7 +20,6 @@ import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import picocli.CommandLine.PicocliException;
 import picocli.CommandLine.Spec;
 
 @Command(name = "add", sortOptions = false)
