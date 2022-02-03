@@ -4,7 +4,7 @@ Command line tool to manipulate a POM file.
 
 ## Example usage
 
-```bash
+```console
 # Set project ID
 pom id com.example:my-app
 pom id com.example:my-webapp --as=war
@@ -38,6 +38,6 @@ This project requires Java 17+, and Maven 3.8.4+.
 You can use [sdkman](https://sdkman.io/) to download them.
 
 To build, run
-```
+```console
 mvn package
 ```
