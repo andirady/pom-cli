@@ -3,6 +3,7 @@ package com.github.andirady.pomcli;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import java.util.logging.Logger;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
@@ -14,6 +15,8 @@ import picocli.CommandLine.Spec;
 
 @Command(name = "id")
 public class IdCommand implements Runnable {
+
+    private static final Logger LOG = Logger.getLogger(IdCommand.class.getName());
 
     @Option(names = { "--as" })
     String as;
@@ -64,10 +67,12 @@ public class IdCommand implements Runnable {
         Model pom;
         var reader = new DefaultModelReader();
         if (Files.exists(pomPath)) {
+            LOG.fine(() -> "Reading existing pom at " + pomPath);
             try (var is = Files.newInputStream(pomPath)) {
                 pom = reader.read(is, null);
             }
         } else {
+            LOG.fine(() -> "Creating new pom at " + pomPath);
             pom = new NewPom().newPom(pomPath);
         }
 

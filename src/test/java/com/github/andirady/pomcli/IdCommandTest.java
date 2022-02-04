@@ -104,11 +104,44 @@ class IdCommandTest {
         var pomPath = fs.getPath("pom.xml");
         var projectId = "com.example:my-app";
 
-        cmd.pomPath = pomPath;
         cmd.id = projectId;
         cmd.as = "pom";
         cmd.run();
         assertEquals("pom com.example:my-app:0.0.1-SNAPSHOT", cmd.readProjectId());
+    }
+
+    @Test
+    void shouldAddParentIfAPomProjectIsFoundInTheParentDirectory() throws Exception {
+        var aPath = fs.getPath("a");
+        var bPath = aPath.resolve("b");
+        var parentPomPath = aPath.resolve("pom.xml");
+        var pomPath = bPath.resolve("pom.xml");
+
+        Files.createDirectory(aPath);
+        Files.createDirectory(bPath);
+
+        var cmd = new IdCommand();
+        cmd.pomPath = parentPomPath;
+        cmd.id = "a:a:1";
+        cmd.as = "pom";
+        cmd.run();
+
+        cmd = new IdCommand();
+        cmd.pomPath = pomPath;
+        cmd.id = "b";
+        cmd.run();
+
+        var pat = Pattern.compile("""
+                .*<parent>\\s*\
+                <groupId>a</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                </parent>""", Pattern.MULTILINE);
+        var s = Files.readString(pomPath);
+        var matcher = pat.matcher(s);
+        assertNotNull(matcher);
+        assertTrue(matcher.find());
+        assertEquals("jar a:b:1", cmd.readProjectId());
     }
 
     @Test
@@ -123,17 +156,24 @@ class IdCommandTest {
         Files.createDirectory(bPath);
         Files.createDirectory(cPath);
 
+        var cmd = new IdCommand();
         cmd.pomPath = parentPomPath;
         cmd.id = "a:a:1";
         cmd.as = "pom";
         cmd.run();
 
+        cmd = new IdCommand();
         cmd.pomPath = pomPath;
         cmd.id = "c";
-        cmd.as = "jar";
         cmd.run();
 
-        var pat = Pattern.compile(".*<parent>\\s*<groupId>a</groupId>\\s*<artifactId>a</artifactId>\\s*<version>1</version>\\s*<relativePath>../../..</relativePath>\\s*</parent>", Pattern.MULTILINE);
+        var pat = Pattern.compile("""
+                .*<parent>\\s*\
+                <groupId>a</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                <relativePath>../..</relativePath>\\s*\
+                </parent>""", Pattern.MULTILINE);
         var s = Files.readString(pomPath);
         var matcher = pat.matcher(s);
         assertNotNull(matcher);

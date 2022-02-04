@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.logging.Logger;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
@@ -12,6 +13,8 @@ import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.ModelReader;
 
 public class NewPom {
+
+    private static final Logger LOG = Logger.getLogger(NewPom.class.getName());
 
     public Model newPom(Path pomPath) {
         var model = new Model();
@@ -22,7 +25,12 @@ public class NewPom {
             parent.setGroupId(parentPom.model().getGroupId());
             parent.setArtifactId(parentPom.model().getArtifactId());
             parent.setVersion(parentPom.model().getVersion());
-            parent.setRelativePath(pomPath.relativize(parentPom.path().getParent()).toString());
+            var relativePath = pomPath.toAbsolutePath()
+                                      .getParent()
+                                      .relativize(parentPom.path().getParent()).toString();
+            if (!"..".equals(relativePath)) {
+                parent.setRelativePath(relativePath);
+            }
             model.setParent(parent);
         }
         var props = model.getProperties();
@@ -53,7 +61,7 @@ public class NewPom {
     }
 
     private ParentPom findParentPom(Path pomPath, ModelReader pomReader) {
-        var parent = pomPath.getParent();
+        var parent = pomPath.toAbsolutePath().getParent();
         // To facilitate test:
         if (parent == null) {
             return null;
@@ -64,19 +72,24 @@ public class NewPom {
             if (parent == null) {
                 return null;
             }
+            LOG.fine("Looking for pom at " + parent);
             var parentPomPath = parent.resolve("pom.xml");
             if (Files.exists(parentPomPath)) {
+                LOG.fine("Found pom.xml at " + parent);
                 try (var is = Files.newInputStream(parentPomPath)) {
                     var pom = pomReader.read(is, null);
                     if ("pom".equals(pom.getPackaging())) {
+                        LOG.fine(() -> parentPomPath + " is choosen as parent");
                         return new ParentPom(parentPomPath, pom);
                     }
+                    LOG.fine(() -> parentPomPath + " is not packaged as pom");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
 
+        LOG.fine(() -> "No parent pom found for " + pomPath);
         return null;
     }
 
