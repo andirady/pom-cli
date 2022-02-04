@@ -1,8 +1,11 @@
 package com.github.andirady.pomcli;
 
+import java.util.logging.*;
 import org.apache.maven.model.Dependency;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.ScopeType;
 
 @Command(name = "pom", subcommandsRepeatable = true, subcommands = {IdCommand.class, AddCommand.class, SearchCommand.class, SetCommand.class})
 public class Main {
@@ -13,6 +16,21 @@ public class Main {
 		cli.registerConverter(Dependency.class, Main::stringToDependency);
 		System.exit(cli.execute(args));
 	}
+
+    @Option(names = { "-d", "--debug" }, scope = ScopeType.INHERIT)
+    public void setDebug(boolean debug) {
+        if (!debug) {
+            return;
+        }
+
+        var rootLogger = Logger.getLogger("");
+        rootLogger.setLevel(Level.FINE);
+        var consoleHandler = new ConsoleHandler();
+        consoleHandler.setFormatter(new SimpleFormatter());
+        consoleHandler.setLevel(Level.FINE);
+        rootLogger.addHandler(consoleHandler);
+        rootLogger.fine("OK");
+    }
 
 	private static QuerySpec stringToQuerySpec(String s) {
 		var qs = QuerySpec.of(s);
