@@ -141,4 +141,95 @@ class AddCommandTest {
         var e = assertThrows(Exception.class, cmd::run);
         assertEquals("Duplicate artifact(s): a:a, b:b", e.getMessage());
     }
+
+    @Test
+    void shouldAddWithoutVersionIfFoundInParentPomDependencyManagement() throws Exception {
+        var projectRoot = fs.getPath("app");
+        Files.createDirectory(projectRoot);
+
+        var parentPomPath = projectRoot.resolve("pom.xml");
+        Files.writeString(parentPomPath, """
+            <project>
+                <groupId>app</groupId>
+                <artifactId>parent</artifactId>
+                <version>1</version>
+                <packaging>pom</packaging>
+                <dependencyManagement>
+                    <dependencies>
+                        <dependency>
+                            <groupId>a</groupId>
+                            <artifactId>a</artifactId>
+                            <version>1</version>
+                        </dependency>
+                    </dependencies>
+                </dependencyManagement>
+            </project>
+            """);
+
+        var submodulePath = projectRoot.resolve("child");
+        Files.createDirectory(submodulePath);
+
+        var cmd = new AddCommand();
+        cmd.pomPath = submodulePath.resolve("pom.xml");
+        cmd.coords = new ArrayList<>();
+        var d = new Dependency();
+        d.setGroupId("a");
+        d.setArtifactId("a");
+        cmd.coords.add(d);
+
+        cmd.run();
+
+        var p = Pattern.compile("""
+                .*<dependencies>\\s*\
+                <dependency>\\s*\
+                <groupId>a</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                </dependency>\\s*\
+                </dependencies>""", Pattern.MULTILINE);
+        var s = Files.readString(cmd.pomPath);
+        var m = p.matcher(s);
+        assertNotNull(m);
+        assertTrue(m.find());
+    }
+
+    @Test
+    void shouldAddToDependencyManagementIfPackagedAsPom() throws Exception {
+        var pomPath = fs.getPath("pom.xml");
+        Files.writeString(pomPath, """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>a</groupId>
+                    <artifactId>a</artifactId>
+                    <version>1</version>
+                    <packaging>pom</packaging>
+                </project>
+                """);
+
+        var cmd = new AddCommand();
+        cmd.pomPath = pomPath;
+        cmd.coords = new ArrayList<>();
+        var d = new Dependency();
+        d.setGroupId("b");
+        d.setArtifactId("b");
+        d.setVersion("1");
+        cmd.coords.add(d);
+
+        cmd.run();
+
+        var p = Pattern.compile("""
+                .*<dependencyManagement>\\s*\
+                <dependencies>\\s*\
+                <dependency>\\s*\
+                <groupId>b</groupId>\\s*\
+                <artifactId>b</artifactId>\\s*\
+                <version>1</version>\\s*\
+                </dependency>\\s*\
+                </dependencies>\\s*\
+                </dependencyManagement>""", Pattern.MULTILINE);
+        var s = Files.readString(pomPath);
+        var m = p.matcher(s);
+        assertNotNull(m);
+        assertTrue(m.find());
+    }
+
 }

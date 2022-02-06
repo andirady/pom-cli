@@ -3,16 +3,22 @@ package com.github.andirady.pomcli;
 import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import java.util.stream.Stream;
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
+import org.apache.maven.model.io.ModelReader;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -57,32 +63,37 @@ public class AddCommand implements Runnable {
     @ArgGroup(exclusive = true, multiplicity = "0..1", order = 1)
     Scope scope;
 
-    @Parameters(arity = "1..*", paramLabel = "groupId:artifactId[:version]")
+    @Parameters(arity = "1..*", paramLabel = "DEPENDENCY", description = "groupId:artifactId[:version] or path to a jar file.")
     List<Dependency> coords;
 
     @Spec
     CommandSpec spec;
 
+    private Model model;
+    private Model parentPom;
+
     @Override
     public void run() {
-        Model model;
+        var reader = new DefaultModelReader();
         if (Files.exists(pomPath)) {
-            var reader = new DefaultModelReader();
             try (var is = Files.newInputStream(pomPath)) {
                 model = reader.read(is, null);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException(e);
             }
         } else {
             LOG.fine(() -> pomPath + " does not exists. Creating a new one");
-            model = new Model();
-            model.setModelVersion("4.0.0");
-            model.setGroupId("unnamed");
+            model = new NewPom().newPom(pomPath);
             model.setArtifactId(Path.of(System.getProperty("user.dir")).getFileName().toString());
-            model.setVersion("0.0.1-SNAPSHOT");
+            if (model.getParent() == null) {
+                model.setGroupId("unnamed");
+                model.setVersion("0.0.1-SNAPSHOT");
+            }
         }
 
-        var existing = model.getDependencies();
+        readParentPom(reader);
+
+        var existing = getExistingDependencies();
         var duplicates = coords.stream()
                                .filter(c -> existing.stream().anyMatch(d -> sameArtifact(c, d)))
                                .map(this::coordString)
@@ -110,15 +121,59 @@ public class AddCommand implements Runnable {
         }
     }
 
-	Dependency ensureVersion(Dependency d) {
-		if (d.getVersion() == null) {
-            var latestVersion = new GetLatestVersion().execute(new QuerySpec(d.getGroupId(), d.getArtifactId(), null));
-            d.setVersion(latestVersion.orElseThrow(() -> new ExecutionException(
-                    spec.commandLine(), "No version found: '" + d.getGroupId() + ":" + d.getArtifactId() + "'")
-                ));
-		}
+    void readParentPom(ModelReader reader) {
+        if (model.getParent() != null) {
+            var parentRelativePath = model.getParent().getRelativePath();
+            var parentPomPath = pomPath.getParent().resolve(parentRelativePath);
+            var filename = "pom.xml";
+            if (!parentPomPath.getFileName().toString().equals(filename)) {
+                parentPomPath = parentPomPath.resolve(filename);
+            }
+            try (var is = Files.newInputStream(parentPomPath)) {
+                parentPom = reader.read(is, null);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
 
-        return d;
+    List<Dependency> getExistingDependencies() {
+        if (!"pom".equals(model.getPackaging())) {
+            return model.getDependencies();
+        }
+
+        var dm = model.getDependencyManagement();
+        if (dm == null) {
+            dm = new DependencyManagement();
+            dm.setDependencies(new ArrayList<>());
+            model.setDependencyManagement(dm);
+        }
+
+        return dm.getDependencies();
+    }
+
+	Dependency ensureVersion(Dependency dep) {
+		if (dep.getVersion() != null) {
+            return dep;
+        }
+
+        if (parentPom != null
+                && Optional.ofNullable(parentPom.getDependencyManagement())
+                           .map(DependencyManagement::getDependencies)
+                           .map(List::stream)
+                           .orElseGet(Stream::of)
+                           .anyMatch(d -> sameArtifact(d, dep))) {
+            return dep;
+        }
+
+        var latestVersion = new GetLatestVersion()
+                .execute(new QuerySpec(dep.getGroupId(), dep.getArtifactId(), null))
+                .orElseThrow(() -> new IllegalStateException(
+                        "No version found: '" + dep.getGroupId() + ":" + dep.getArtifactId() + "'"
+                    ));
+        dep.setVersion(latestVersion);
+
+        return dep;
 	}
 
     boolean sameArtifact(Dependency d1, Dependency d2) {
