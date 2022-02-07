@@ -1,5 +1,7 @@
 package com.github.andirady.pomcli;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -32,23 +34,24 @@ public class IdCommand implements Runnable {
 
     @Override
     public void run() {
-        try {
-            if (id != null) {
-                updatePom();
-            }
-
-            System.out.println(readProjectId());
-        } catch (Exception e) {
-            throw new RuntimeException("Fail to read " + pomPath + ": " + e.getMessage(), e);
+        if (id != null) {
+            updatePom();
+        } else if (Files.notExists(pomPath)) {
+            throw new IllegalStateException("No such file: " + pomPath);
         }
+
+        System.out.println(readProjectId());
     }
 
-    String readProjectId() throws Exception {
+    String readProjectId() {
         var pomReader = new DefaultModelReader();
         Model pom;
         try (var is = Files.newInputStream(pomPath)) {
             pom = pomReader.read(is, null);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
+
         var g = pom.getGroupId();
         var v = pom.getVersion();
         var parent = pom.getParent();
@@ -63,31 +66,22 @@ public class IdCommand implements Runnable {
         return pom.getPackaging() + " " + g + ":" + pom.getArtifactId() + ":" + v;
     }
 
-    private void updatePom() throws Exception {
+    private void updatePom() {
         Model pom;
         var reader = new DefaultModelReader();
         if (Files.exists(pomPath)) {
             LOG.fine(() -> "Reading existing pom at " + pomPath);
             try (var is = Files.newInputStream(pomPath)) {
                 pom = reader.read(is, null);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         } else {
             LOG.fine(() -> "Creating new pom at " + pomPath);
             pom = new NewPom().newPom(pomPath);
         }
 
-        var parts = id.split(":", 3);
-        
-        if (parts.length >= 2) {
-            pom.setGroupId(parts[0]);
-            pom.setArtifactId(parts[1]);
-        } else if (parts.length == 1) {
-            pom.setArtifactId(parts[0]);
-        }
-
-        if (parts.length >= 3) {
-            pom.setVersion(parts[2]);
-        }
+        parseId(id, pom);
 
         if (pom.getParent() == null) {
             if (pom.getGroupId() == null) {
@@ -105,6 +99,23 @@ public class IdCommand implements Runnable {
         var pomWriter = new DefaultModelWriter();
         try (var os = Files.newOutputStream(pomPath)) {
             pomWriter.write(os, null, pom);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void parseId(String id, Model pom) {
+        var parts = id.split(":", 3);
+        
+        if (parts.length >= 2) {
+            pom.setGroupId(parts[0]);
+            pom.setArtifactId(parts[1]);
+        } else if (parts.length == 1) {
+            pom.setArtifactId(parts[0]);
+        }
+
+        if (parts.length >= 3) {
+            pom.setVersion(parts[2]);
         }
     }
 

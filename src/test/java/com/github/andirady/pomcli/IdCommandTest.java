@@ -30,6 +30,14 @@ class IdCommandTest {
     }
 
     @Test
+    void shouldFailIfNoIdAndNoExistingPom() {
+        var pomPath = fs.getPath("pom.xml");
+
+        cmd.pomPath = pomPath;
+        assertThrows(Exception.class, cmd::run);
+    }
+
+    @Test
     void shouldCreateNewFileIfPomNotExists() {
         var pomPath = fs.getPath("pom.xml");
         var projectId = "com.example:my-app:0.0.1";
