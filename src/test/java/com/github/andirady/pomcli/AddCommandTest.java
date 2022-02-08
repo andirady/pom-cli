@@ -1,16 +1,21 @@
 package com.github.andirady.pomcli;
 
-import org.apache.maven.model.Dependency;
-import org.junit.jupiter.api.AfterEach;
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.maven.model.Dependency;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 
 import com.google.common.jimfs.Jimfs;
 
@@ -42,7 +47,12 @@ class AddCommandTest {
         cmd.coords.add(d);
         cmd.run();
 
-        var pat = Pattern.compile(".*<dependency>\\s*<groupId>g</groupId>\\s*<artifactId>a</artifactId>\\s*<version>1</version>\\s*</dependency>.*", Pattern.MULTILINE);
+        var pat = Pattern.compile("""
+                .*<dependency>\\s*\
+                <groupId>g</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                </dependency>.*""", Pattern.MULTILINE);
         var s = Files.readString(pomPath);
         var matcher = pat.matcher(s);
         assertNotNull(matcher);
@@ -65,7 +75,13 @@ class AddCommandTest {
         cmd.scope.test = true;
         cmd.run();
 
-        var pat = Pattern.compile(".*<dependency>\\s*<groupId>g</groupId>\\s*<artifactId>a</artifactId>\\s*<version>1</version>\\s*<scope>test</scope>\\s*</dependency>.*", Pattern.MULTILINE);
+        var pat = Pattern.compile("""
+                .*<dependency>\\s*\
+                <groupId>g</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                <scope>test</scope>\\s*\
+                </dependency>.*""", Pattern.MULTILINE);
         var s = Files.readString(pomPath);
         var matcher = pat.matcher(s);
         assertNotNull(matcher);
@@ -232,4 +248,52 @@ class AddCommandTest {
         assertTrue(m.find());
     }
 
+    @Test
+    void shouldFailIfFileHasNoMavenInfo() throws Exception {
+        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
+        var libDir = tempDir.resolve("lib");
+        var projectDir = tempDir.resolve("project");
+        Files.createDirectory(libDir);
+        Files.createDirectory(projectDir);
+
+        var jarPath = libDir.resolve("a.jar");
+        try (var zip = new ZipOutputStream(Files.newOutputStream(jarPath))) {
+        }
+
+        var app = new Main();
+        var cmd = Main.createCommandLine(app);
+        var rc = cmd.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
+        assertTrue(rc == picocli.CommandLine.ExitCode.USAGE);
+
+        Files.deleteIfExists(tempDir);
+    }
+
+    @Test
+    void canAddByReadingMavenInfoFromJarFile() throws Exception {
+        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
+        var libDir = tempDir.resolve("lib");
+        var projectDir = tempDir.resolve("project");
+        Files.createDirectory(libDir);
+        Files.createDirectory(projectDir);
+
+        var jarPath = libDir.resolve("a.jar");
+        try (var zip = new ZipOutputStream(Files.newOutputStream(jarPath))) {
+            var e = new ZipEntry("META-INF/maven/g/a/pom.properties");
+            zip.putNextEntry(e);
+            var data = """
+                    version=1
+                    groupId=g
+                    artifactId=a
+                    """.getBytes();
+            zip.write(data, 0, data.length);
+            zip.closeEntry();
+        }
+
+        var app = new Main();
+        var cmd = Main.createCommandLine(app);
+        var rc = cmd.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
+        assertTrue(rc == picocli.CommandLine.ExitCode.OK);
+
+        Files.deleteIfExists(tempDir);
+    }
 }

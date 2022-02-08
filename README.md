@@ -22,6 +22,9 @@ pom add info.picocli:picocli
 pom add --test org.junit.jupiter:junit-jupiter
 pom add --provided org.junit.jupiter:junit-jupiter
 pom add --runtime org.junit.jupiter:junit-jupiter
+
+# Add from maven metadata in a jar file
+pom add /path/to/file.jar
 ```
 
 For projects that are packaged as "pom", the dependencies will be added
@@ -46,7 +49,7 @@ pom set maven.compiler.{source,target}=17
 
 ### Search
 
-```
+```console
 # Search by artifact ID
 pom search log4j-api
 
