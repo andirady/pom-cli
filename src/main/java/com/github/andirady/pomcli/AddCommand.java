@@ -181,7 +181,7 @@ public class AddCommand implements Runnable {
 	}
 
     boolean sameArtifact(Dependency d1, Dependency d2, boolean ignoreGroupId) {
-        if (!ignoreGroupId && !d1.getGroupId().equals(d2.getGroupId())) {
+        if (!ignoreGroupId && !Objects.equals(d1.getGroupId(), d2.getGroupId())) {
             return false;
         }
 
