@@ -26,7 +26,13 @@ public class Main {
     static CommandLine createCommandLine(Main app) {
 		var cli = new CommandLine(app);
         cli.setExecutionExceptionHandler((e, cmd, parseResult) -> {
-            cmd.getErr().println(cmd.getColorScheme().errorText(e.getMessage()));
+            var msg = e.getMessage();
+            if (msg == null) {
+                e.printStackTrace();
+            } else {
+                cmd.getErr().println(cmd.getColorScheme().errorText(msg));
+            }
+
             return cmd.getExitCodeExceptionMapper() != null
                     ? cmd.getExitCodeExceptionMapper().getExitCode(e)
                     : cmd.getCommandSpec().exitCodeOnExecutionException();
