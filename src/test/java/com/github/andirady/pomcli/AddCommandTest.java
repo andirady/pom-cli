@@ -2,11 +2,14 @@ package com.github.andirady.pomcli;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.File;
+import java.util.Comparator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -23,10 +26,10 @@ class AddCommandTest {
 
     FileSystem fs;
 
-	@BeforeEach
-	void setup() {
+    @BeforeEach
+    void setup() {
         fs = Jimfs.newFileSystem();
-	}
+    }
 
     @AfterEach
     void cleanup() throws Exception {
@@ -263,9 +266,9 @@ class AddCommandTest {
         var app = new Main();
         var cmd = Main.createCommandLine(app);
         var rc = cmd.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
-        assertTrue(rc == picocli.CommandLine.ExitCode.USAGE);
+        assertSame(picocli.CommandLine.ExitCode.USAGE, rc);
 
-        Files.deleteIfExists(tempDir);
+        deleteRecursive(tempDir);
     }
 
     @Test
@@ -292,8 +295,16 @@ class AddCommandTest {
         var app = new Main();
         var cmd = Main.createCommandLine(app);
         var rc = cmd.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
-        assertTrue(rc == picocli.CommandLine.ExitCode.OK);
+        assertSame(picocli.CommandLine.ExitCode.OK, rc);
 
-        Files.deleteIfExists(tempDir);
+        deleteRecursive(tempDir);
+    }
+
+    private void deleteRecursive(Path dir) throws Exception {
+        try (var stream = Files.walk(dir)) {
+            stream.sorted(Comparator.reverseOrder())
+                  .map(Path::toFile)
+                  .forEach(File::delete);
+        }
     }
 }
