@@ -8,10 +8,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.FileSystem;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import com.google.common.jimfs.Jimfs;
 
@@ -75,44 +79,46 @@ class IdCommandTest {
         assertTrue(s.contains("<maven.compiler.target>"));
     }
 
-    @Test
-    void shouldAutomaticallySetVersionIfNotSpecified() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
-        var projectId = "com.example:my-app";
-
-        cmd.pomPath = pomPath;
-        cmd.id = projectId;
-        cmd.run();
-        assertEquals("jar com.example:my-app:0.0.1-SNAPSHOT", cmd.readProjectId());
+    private static Stream<Arguments> idInputs() {
+        return Stream.of(
+            Arguments.of("foo", null, "jar unnamed:foo:0.0.1-SNAPSHOT"),
+            Arguments.of(".", null, "jar unnamed:my-app:0.0.1-SNAPSHOT"),
+            Arguments.of("com.example:my-app", null, "jar com.example:my-app:0.0.1-SNAPSHOT"),
+            Arguments.of("com.example:my-app", "war", "war com.example:my-app:0.0.1-SNAPSHOT"),
+            Arguments.of("com.example:my-app:1.0.0", null, "jar com.example:my-app:1.0.0"),
+            Arguments.of("com.example:my-app:1.0.0", "war", "war com.example:my-app:1.0.0")
+        );
     }
-    
-    @Test
-    void shouldSetPackaging() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
-        var projectId = "com.example:my-app:0.0.1";
-        var packaging = "war";
+
+    @ParameterizedTest
+    @MethodSource("idInputs")
+    void shouldMatchExpected(String id, String packaging, String expectedOutput) throws Exception {
+        var projectPath = fs.getPath("my-app");
+        var pomPath = projectPath.resolve("pom.xml");
+
+        Files.createDirectory(projectPath);
 
         cmd.pomPath = pomPath;
-        cmd.id = projectId;
+        cmd.id = id;
         cmd.as = packaging;
-        cmd.run();
-        assertEquals("war com.example:my-app:0.0.1", cmd.readProjectId());
+		try {
+			cmd.run();
+		} catch (Exception e) {
+            e.printStackTrace();
+        }
+        assertEquals(expectedOutput, cmd.readProjectId());
     }
-    
-    @Test
-    void shouldSetGroupIdToUnnamedIfNotSpeficied() throws Exception {
-        var cmd = newUnnamed();
-        assertEquals("jar unnamed:my-app:0.0.1-SNAPSHOT", cmd.readProjectId());    
-    }
-    
+
     @Test
     void shouldUpdateExistingPom() throws Exception {
-        newUnnamed();
-
         var pomPath = fs.getPath("pom.xml");
-        var projectId = "com.example:my-app";
+        var projectId = "my-app";
 
+        cmd.pomPath = pomPath;
         cmd.id = projectId;
+        cmd.run();
+
+        cmd.id = "com.example:my-app";
         cmd.as = "pom";
         cmd.run();
         assertEquals("pom com.example:my-app:0.0.1-SNAPSHOT", cmd.readProjectId());
@@ -187,17 +193,6 @@ class IdCommandTest {
         assertNotNull(matcher);
         assertTrue(matcher.find());
         assertEquals("jar a:c:1", cmd.readProjectId());
-    }
-
-    private IdCommand newUnnamed() {
-        var pomPath = fs.getPath("pom.xml");
-        var projectId = "my-app";
-
-        cmd.pomPath = pomPath;
-        cmd.id = projectId;
-        cmd.run();
-
-        return cmd;
     }
 
     @AfterEach

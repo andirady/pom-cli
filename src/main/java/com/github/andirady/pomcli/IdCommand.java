@@ -117,6 +117,10 @@ public class IdCommand implements Runnable {
         if (parts.length >= 3) {
             pom.setVersion(parts[2]);
         }
+
+        if (".".equals(pom.getArtifactId())) {
+            pom.setArtifactId(pomPath.toAbsolutePath().getParent().getFileName().toString());
+        }
     }
 
 }

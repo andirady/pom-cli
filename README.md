@@ -10,6 +10,11 @@ Command line tool to manipulate a POM file.
 pom id com.example:my-app
 pom id com.example:my-app:1.0.0
 pom id com.example:my-webapp --as=war
+
+# Set artifact ID to current directory name
+pom id .
+pom id com.example:.
+pom id com.example:.:1.0.0
 ```
 
 ### Adding dependencies
