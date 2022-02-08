@@ -124,7 +124,7 @@ public class AddCommand implements Runnable {
     void readParentPom(ModelReader reader) {
         if (model.getParent() != null) {
             var parentRelativePath = model.getParent().getRelativePath();
-            var parentPomPath = pomPath.getParent().resolve(parentRelativePath);
+            var parentPomPath = pomPath.toAbsolutePath().getParent().resolve(parentRelativePath);
             var filename = "pom.xml";
             if (!parentPomPath.getFileName().toString().equals(filename)) {
                 parentPomPath = parentPomPath.resolve(filename);
