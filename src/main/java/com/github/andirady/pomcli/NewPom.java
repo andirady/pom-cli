@@ -32,11 +32,13 @@ public class NewPom {
                 parent.setRelativePath(relativePath);
             }
             model.setParent(parent);
+        } else {
+            // Only set java version on main poms.
+            var props = model.getProperties();
+            var majorVersion = getJavaMajorVersion();
+            props.setProperty("maven.compiler.source", majorVersion);
+            props.setProperty("maven.compiler.target", majorVersion);
         }
-        var props = model.getProperties();
-        var majorVersion = getJavaMajorVersion();
-        props.setProperty("maven.compiler.source", majorVersion);
-        props.setProperty("maven.compiler.target", majorVersion);
         return model;
     }
 
