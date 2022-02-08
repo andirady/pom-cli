@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.util.Comparator;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -19,6 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import com.google.common.jimfs.Jimfs;
 
@@ -161,8 +165,16 @@ class AddCommandTest {
         assertEquals("Duplicate artifact(s): a:a, b:b", e.getMessage());
     }
 
-    @Test
-    void shouldAddWithoutVersionIfFoundInParentPomDependencyManagement() throws Exception {
+    private static Stream<Arguments> provideDeps() {
+        return Stream.of(
+            Arguments.of("g:a"),
+            Arguments.of("a")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideDeps")
+    void shouldReadDependencyManagementFromParentPom(String d) throws Exception {
         var projectRoot = fs.getPath("app");
         Files.createDirectory(projectRoot);
 
@@ -176,7 +188,7 @@ class AddCommandTest {
                 <dependencyManagement>
                     <dependencies>
                         <dependency>
-                            <groupId>a</groupId>
+                            <groupId>g</groupId>
                             <artifactId>a</artifactId>
                             <version>1</version>
                         </dependency>
@@ -191,17 +203,14 @@ class AddCommandTest {
         var cmd = new AddCommand();
         cmd.pomPath = submodulePath.resolve("pom.xml");
         cmd.coords = new ArrayList<>();
-        var d = new Dependency();
-        d.setGroupId("a");
-        d.setArtifactId("a");
-        cmd.coords.add(d);
+        cmd.coords.add(Main.stringToDependency(d));
 
         cmd.run();
 
         var p = Pattern.compile("""
                 .*<dependencies>\\s*\
                 <dependency>\\s*\
-                <groupId>a</groupId>\\s*\
+                <groupId>g</groupId>\\s*\
                 <artifactId>a</artifactId>\\s*\
                 </dependency>\\s*\
                 </dependencies>""", Pattern.MULTILINE);

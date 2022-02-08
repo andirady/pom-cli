@@ -39,6 +39,42 @@ If version is not specified, the latest version of the artifact will be used.
 If there is a parent pom, and it already included the dependency version,
 no version will be added.
 
+If the ``pom.xml`` is a child pom, dependency can be added by just specifying the artifact ID.
+For example, if the parent pom contains the following declaration:
+
+```xml
+  <dependencyManagement>
+    <dependencies>
+      ...
+      <dependency>
+        <groupId>com.example</groupId>
+        <artifactId>some-api</artifactId>
+        <version>1.0.0</version>
+      </dependency>
+      ...
+    </dependencies>
+  </dependencyManagement>
+```
+
+Running the following:
+
+```console
+pom add some-api
+```
+
+would results in the target ``pom.xml`` to contain the following:
+
+```xml
+  <dependencies>
+    ...
+    <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>some-api</artifactId>
+    </dependency>
+    ...
+  </dependencies>
+```
+
 ### Setting properties
 
 ```console

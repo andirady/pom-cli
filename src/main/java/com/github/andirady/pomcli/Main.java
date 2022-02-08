@@ -66,23 +66,23 @@ public class Main {
 		return qs;
 	}
 
-	private static Dependency stringToDependency(String s) {
+	public static Dependency stringToDependency(String s) {
         var path = Path.of(s);
         if (Files.isRegularFile(path)) {
             return readCoordFromJarFile(path);
         }
 
+        var d = new Dependency();
 		var parts = s.split(":");
 		if (parts.length < 2) {
-			throw new TypeConversionException("Invalid format: missing groupId for '" + s + "'");
-		}
-
-		var d = new Dependency();
-		d.setGroupId(parts[0]);
-		d.setArtifactId(parts[1]);
-		if (parts.length >= 3) {
-			d.setVersion(parts[2]);
-		}
+            d.setArtifactId(parts[0]);
+		} else {
+            d.setGroupId(parts[0]);
+            d.setArtifactId(parts[1]);
+            if (parts.length >= 3) {
+                d.setVersion(parts[2]);
+            }
+        }
 
 		return d;
 	}

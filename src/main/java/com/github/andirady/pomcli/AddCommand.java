@@ -95,7 +95,7 @@ public class AddCommand implements Runnable {
 
         var existing = getExistingDependencies();
         var duplicates = coords.stream()
-                               .filter(c -> existing.stream().anyMatch(d -> sameArtifact(c, d)))
+                               .filter(c -> existing.stream().anyMatch(d -> sameArtifact(c, d, false)))
                                .map(this::coordString)
                                .collect(joining(", "));
         if (duplicates.length() > 0) {
@@ -157,12 +157,16 @@ public class AddCommand implements Runnable {
             return dep;
         }
 
-        if (parentPom != null
-                && Optional.ofNullable(parentPom.getDependencyManagement())
-                           .map(DependencyManagement::getDependencies)
-                           .map(List::stream)
-                           .orElseGet(Stream::of)
-                           .anyMatch(d -> sameArtifact(d, dep))) {
+        DependencyManagement dm = null;
+        Optional<Dependency> managed = null;
+        if (
+            parentPom != null
+                && (dm = parentPom.getDependencyManagement()) != null
+                && (managed = dm.getDependencies().stream().filter(d -> sameArtifact(d, dep, true)).findFirst()).isPresent()
+        ) {
+            if (dep.getGroupId() == null) {
+                dep.setGroupId(managed.get().getGroupId());
+            }
             return dep;
         }
 
@@ -176,12 +180,12 @@ public class AddCommand implements Runnable {
         return dep;
 	}
 
-    boolean sameArtifact(Dependency d1, Dependency d2) {
-        var g = d1.getGroupId().equals(d2.getGroupId());
-        var a = d1.getArtifactId().equals(d2.getArtifactId());
-        var classfifier = (d1.getClassifier() != null && d1.getClassifier().equals(d2.getClassifier()))
-                || (d1.getClassifier() == d2.getClassifier()); // null
-        return g && a && classfifier;
+    boolean sameArtifact(Dependency d1, Dependency d2, boolean ignoreGroupId) {
+        if (!ignoreGroupId && !d1.getGroupId().equals(d2.getGroupId())) {
+            return false;
+        }
+
+        return d1.getArtifactId().equals(d2.getArtifactId()) && Objects.equals(d1.getClassifier(), d2.getClassifier());
     }
 
     String coordString(Dependency d) {
