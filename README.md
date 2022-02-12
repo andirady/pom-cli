@@ -1,3 +1,5 @@
+[![Java CI with Maven](https://github.com/andirady/pomcli/actions/workflows/build.yml/badge.svg)](https://github.com/andirady/pomcli/actions/workflows/build.yml)
+
 # pomcli
 
 Command line tool to manipulate a POM file.
