@@ -33,7 +33,7 @@ public class SolrSearch {
 				.headers("Accept", "application/json", "Accept-Encoding", "gzip").build();
 		try {
 			var httpResp = httpClient.send(httpReq, this::gzipBodyHandler);
-			return httpResp.body();
+			return httpResp.body().get();
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);
 		} catch (InterruptedException e) {
@@ -42,15 +42,23 @@ public class SolrSearch {
 		}
 	}
 
-	private BodySubscriber<SolrSearchResult> gzipBodyHandler(HttpResponse.ResponseInfo respInfo) {
+	private BodySubscriber<java.util.function.Supplier<SolrSearchResult>> gzipBodyHandler(HttpResponse.ResponseInfo respInfo) {
+		if (respInfo.statusCode() != 200) {
+            throw new IllegalStateException("Server returns error: statusCode=" + respInfo.statusCode());
+        }
+
 		var contEnc = respInfo.headers().firstValue("Content-Encoding");
-		if (respInfo.statusCode() != 200 || !contEnc.filter("gzip"::equals).isPresent()) {
-			throw new IllegalStateException("Server returns error: statusCode=" + respInfo.statusCode());
+        if (!contEnc.filter("gzip"::equals).isPresent()) {
+			throw new IllegalStateException("Server returns unexpected encoding: " + contEnc.orElse(""));
 		}
 
-		return BodySubscribers.mapping(HttpResponse.BodySubscribers.ofInputStream(), is -> {
-			try (var gis = new GZIPInputStream(is); var isr = new InputStreamReader(gis, StandardCharsets.UTF_8);) {
-				return OM.readValue(isr, SolrSearchResult.class);
+        var upstream = HttpResponse.BodySubscribers.ofInputStream();
+		return BodySubscribers.mapping(upstream, is -> () -> {
+			try (
+                var stream = is;
+                var gis = new GZIPInputStream(stream);
+            ) {
+				return OM.readValue(gis, SolrSearchResult.class);
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
 			}
