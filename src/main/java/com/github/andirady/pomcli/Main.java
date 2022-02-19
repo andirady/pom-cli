@@ -57,7 +57,7 @@ public class Main {
         rootLogger.addHandler(consoleHandler);
     }
 
-	private static QuerySpec stringToQuerySpec(String s) {
+	static QuerySpec stringToQuerySpec(String s) {
 		var qs = QuerySpec.of(s);
 		if (qs.groupId() == null) {
 			throw new TypeConversionException("Invalid format: missing groupId for '" + s + "'");
@@ -66,7 +66,7 @@ public class Main {
 		return qs;
 	}
 
-	public static Dependency stringToDependency(String s) {
+	static Dependency stringToDependency(String s) {
         var path = Path.of(s);
         if (Files.isRegularFile(path)) {
             return readCoordFromJarFile(path);

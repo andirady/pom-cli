@@ -12,6 +12,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -22,9 +23,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 import com.google.common.jimfs.Jimfs;
+import picocli.CommandLine;
 
 class AddCommandTest {
 
@@ -40,59 +45,80 @@ class AddCommandTest {
         fs.close();
     }
 
-    @Test
-    void shouldAdd() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
-
-        var cmd = new AddCommand();
-        cmd.pomPath = pomPath;
-        cmd.coords = new ArrayList<>();
-        var d = new Dependency();
-        d.setGroupId("g");
-        d.setArtifactId("a");
-        d.setVersion("1");
-        cmd.coords.add(d);
-        cmd.run();
-
-        var pat = Pattern.compile("""
+    static Stream<Arguments> successArgs() {
+        return Stream.of(
+            Arguments.of(new String[] { "add", "g:a:1" }, """
                 .*<dependency>\\s*\
                 <groupId>g</groupId>\\s*\
                 <artifactId>a</artifactId>\\s*\
                 <version>1</version>\\s*\
-                </dependency>.*""", Pattern.MULTILINE);
-        var s = Files.readString(pomPath);
-        var matcher = pat.matcher(s);
-        assertNotNull(matcher);
-        assertTrue(matcher.find());
-    }
-
-    @Test
-    void shouldAddScopeIfNotCompileScope() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
-
-        var cmd = new AddCommand();
-        cmd.pomPath = pomPath;
-        cmd.coords = new ArrayList<>();
-        var d = new Dependency();
-        d.setGroupId("g");
-        d.setArtifactId("a");
-        d.setVersion("1");
-        cmd.coords.add(d);
-        cmd.scope = new AddCommand.Scope();
-        cmd.scope.test = true;
-        cmd.run();
-
-        var pat = Pattern.compile("""
+                </dependency>.*"""
+            ),
+            Arguments.of(new String[] { "add", "--compile", "g:a:1" }, """
+                .*<dependency>\\s*\
+                <groupId>g</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                </dependency>.*"""
+            ),
+            Arguments.of(new String[] { "add", "--test", "g:a:1" }, """
                 .*<dependency>\\s*\
                 <groupId>g</groupId>\\s*\
                 <artifactId>a</artifactId>\\s*\
                 <version>1</version>\\s*\
                 <scope>test</scope>\\s*\
-                </dependency>.*""", Pattern.MULTILINE);
+                </dependency>.*"""
+            ),
+            Arguments.of(new String[] { "add", "--provided", "g:a:1" }, """
+                .*<dependency>\\s*\
+                <groupId>g</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                <scope>provided</scope>\\s*\
+                </dependency>.*"""
+            ),
+            Arguments.of(new String[] { "add", "--runtime", "g:a:1" }, """
+                .*<dependency>\\s*\
+                <groupId>g</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                <scope>runtime</scope>\\s*\
+                </dependency>.*"""
+            ),
+            Arguments.of(new String[] { "add", "--import", "g:a:1" }, """
+                .*<dependency>\\s*\
+                <groupId>g</groupId>\\s*\
+                <artifactId>a</artifactId>\\s*\
+                <version>1</version>\\s*\
+                <type>pom</type>\\s*\
+                <scope>import</scope>\\s*\
+                </dependency>.*"""
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("successArgs")
+    void shouldSuccess(String[] args, String expectedPattern) throws Exception {
+        var pomPath = fs.getPath("pom.xml");
+
+        try (var paths = Mockito.mockStatic(Path.class)) {
+            //paths.when(Path::of).thenReturn(fs.getPath("foo"));
+            paths.when(() -> Path.of(ArgumentMatchers.anyString()))
+                 .thenAnswer(inv -> fs.getPath((String) inv.getArguments()[0]));
+
+            var app = new Main();
+            var cmd = new CommandLine(app);
+            cmd.registerConverter(Dependency.class, Main::stringToDependency);
+            var rc = cmd.execute(args);
+            assertEquals(0, rc);
+        }
+
+        var pat = Pattern.compile(expectedPattern, Pattern.MULTILINE);
         var s = Files.readString(pomPath);
         var matcher = pat.matcher(s);
         assertNotNull(matcher);
-        assertTrue(matcher.find());
+        assertTrue(matcher.find(), "Does not match /" + expectedPattern + "/ pattern");
     }
 
     @Test
@@ -175,10 +201,10 @@ class AddCommandTest {
     @ParameterizedTest
     @MethodSource("provideDeps")
     void shouldReadDependencyManagementFromParentPom(String d) throws Exception {
-        var projectRoot = fs.getPath("app");
-        Files.createDirectory(projectRoot);
+        var base = fs.getPath("app");
+        Files.createDirectory(base);
 
-        var parentPomPath = projectRoot.resolve("pom.xml");
+        var parentPomPath = base.resolve("pom.xml");
         Files.writeString(parentPomPath, """
             <project>
                 <groupId>app</groupId>
@@ -197,7 +223,7 @@ class AddCommandTest {
             </project>
             """);
 
-        var submodulePath = projectRoot.resolve("child");
+        var submodulePath = base.resolve("child");
         Files.createDirectory(submodulePath);
 
         var cmd = new AddCommand();

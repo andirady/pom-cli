@@ -47,10 +47,14 @@ public class AddCommand implements Runnable {
         @Option(names = "--test", description = "Add as test dependency", order = 3)
         boolean test;
 
+        @Option(names = "--import", description = "Add as import dependency", order = 4)
+        boolean importScope;
+
         String value() {
-            if (runtime)  return "runtime";
-            if (provided) return "provide";
-            if (test)     return "test";
+            if (runtime)     return "runtime";
+            if (provided)    return "provided";
+            if (test)        return "test";
+            if (importScope) return "import";
 
             return "compile";
         }
@@ -63,7 +67,11 @@ public class AddCommand implements Runnable {
     @ArgGroup(exclusive = true, multiplicity = "0..1", order = 1)
     Scope scope;
 
-    @Parameters(arity = "1..*", paramLabel = "DEPENDENCY", description = "groupId:artifactId[:version] or path to a jar file.")
+    @Parameters(
+        arity = "1..*",
+        paramLabel = "DEPENDENCY",
+        description = "groupId:artifactId[:version] or path to a jar file."
+    )
     List<Dependency> coords;
 
     @Spec
@@ -106,6 +114,9 @@ public class AddCommand implements Runnable {
         if (scope != null && !"compile".equals(scope.value())) {
             stream = stream.map(d -> {
                 d.setScope(scope.value());
+                if (scope.importScope) {
+                    d.setType("pom");
+                }
                 return d;
             });
         }
