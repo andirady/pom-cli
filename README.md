@@ -107,10 +107,10 @@ pom search -fc org.apache.logging.log4j.Logger
 
 ## Building 
 
-This project requires Java 17+, Graal 21.3+ and Maven 3.8.4+.
+This project requires Java 17+, Graal 22.1+ and Maven 3.8.4+.
 You can use [sdkman](https://sdkman.io/) to download them.
 
 To build, run
 ```console
-mvn -Pgraalvm
+mvn -Pnative
 ```

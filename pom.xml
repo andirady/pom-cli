@@ -112,10 +112,7 @@
     </build>
     <profiles>
         <profile>
-            <id>graalvm</id>
-            <properties>
-                <graalvm.version>21.2.0</graalvm.version>
-            </properties>
+            <id>native</id>
             <build>
                 <defaultGoal>package</defaultGoal>
                 <plugins>
@@ -137,50 +134,21 @@
                         </configuration>
                     </plugin>
                     <plugin>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>3.0.0</version>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>0.9.11</version>
                         <executions>
                             <execution>
-                                <id>generate-nativeimage-configs</id>
-                                <phase>process-classes</phase>
+                                <id>build-native</id>
                                 <goals>
-                                    <goal>run</goal>
+                                  <goal>build</goal>
                                 </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <target>
-                                <java className="${exec.mainClass}" fork="true">
-                                    <classpath>
-                                        <path refid="maven.compile.classpath"/>
-                                    </classpath>
-                                    <jvmarg value="-agentlib:native-image-agent=config-merge-dir=${basedir}/src/main/resources/META-INF/native-image/${project.groupId}/${project.artifactId}"/>
-                                    <arg line="id"/>
-                                </java>
-                            </target>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.graalvm.nativeimage</groupId>
-                        <artifactId>native-image-maven-plugin</artifactId>
-                        <version>${graalvm.version}</version>
-                        <executions>
-                            <execution>
                                 <phase>package</phase>
-                                <goals>
-                                    <goal>native-image</goal>
-                                </goals>
                             </execution>
                         </executions>
                         <configuration>
                             <imageName>pom</imageName>
                             <mainClass>${exec.mainClass}</mainClass>
-                            <buildArgs>
-								--enable-http
-								--enable-https
-								--report-unsupported-elements-at-runtime
-                                -H:Log=registerResource
-							</buildArgs>
                         </configuration>
                     </plugin>
                 </plugins>
