@@ -1,5 +1,6 @@
 package com.github.andirady.pomcli;
 
+import org.apache.maven.model.io.DefaultModelReader;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
@@ -331,6 +332,101 @@ class AddCommandTest {
         var cmd = Main.createCommandLine(app);
         var rc = cmd.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
         assertSame(picocli.CommandLine.ExitCode.OK, rc);
+
+        deleteRecursive(tempDir);
+    }
+
+    @Test
+    void shouldFailWhenAddingPathWithoutPomXml() throws Exception {
+        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
+        var parentDir = tempDir.resolve("hello");
+        var apiDir = parentDir.resolve("hello-api");
+        var coreDir = parentDir.resolve("hello-core");
+
+        Files.createDirectory(parentDir);
+        Files.createDirectory(apiDir);
+        Files.createDirectory(coreDir);
+
+        Files.writeString(parentDir.resolve("pom.xml"), """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>hello</groupId>
+                    <artifactId>hello</artifactId>
+                    <version>1</version>
+                </project>
+                """);
+        Files.writeString(coreDir.resolve("pom.xml"), """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <parent>
+                        <groupId>hello</groupId>
+                        <artifactId>hello</artifactId>
+                        <version>1</version>
+                    </parent>
+                    <artifactId>hello-core</artifactId>
+                </project>
+                """);
+
+        var app = new Main();
+        var cmd = Main.createCommandLine(app);
+        var rc = cmd.execute("add", "-f", coreDir.resolve("pom.xml").toString(), apiDir.toString());
+        assertSame(picocli.CommandLine.ExitCode.USAGE, rc);
+
+        deleteRecursive(tempDir);
+    }
+
+    @Test
+    void canAddByPath() throws Exception {
+        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
+        var parentDir = tempDir.resolve("hello");
+        var apiDir = parentDir.resolve("hello-api");
+        var coreDir = parentDir.resolve("hello-core");
+
+        Files.createDirectory(parentDir);
+        Files.createDirectory(apiDir);
+        Files.createDirectory(coreDir);
+
+        Files.writeString(parentDir.resolve("pom.xml"), """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>hello</groupId>
+                    <artifactId>hello</artifactId>
+                    <version>1</version>
+                </project>
+                """);
+        Files.writeString(apiDir.resolve("pom.xml"), """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <parent>
+                        <groupId>hello</groupId>
+                        <artifactId>hello</artifactId>
+                        <version>1</version>
+                    </parent>
+                    <artifactId>hello-api</artifactId>
+                </project>
+                """);
+        Files.writeString(coreDir.resolve("pom.xml"), """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <parent>
+                        <groupId>hello</groupId>
+                        <artifactId>hello</artifactId>
+                        <version>1</version>
+                    </parent>
+                    <artifactId>hello-core</artifactId>
+                </project>
+                """);
+
+        var app = new Main();
+        var cmd = Main.createCommandLine(app);
+        var rc = cmd.execute("add", "-f", coreDir.resolve("pom.xml").toString(), apiDir.toString());
+        assertSame(picocli.CommandLine.ExitCode.OK, rc);
+
+        var pomReader = new DefaultModelReader();
+        try (var is = Files.newInputStream(coreDir.resolve("pom.xml"))) {
+            var pom = pomReader.read(is, null);
+            assertTrue(pom.getDependencies().stream().anyMatch(d -> "hello-api".equals(d.getArtifactId())));
+        }
 
         deleteRecursive(tempDir);
     }

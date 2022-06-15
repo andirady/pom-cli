@@ -32,6 +32,10 @@ pom add --runtime org.junit.jupiter:junit-jupiter
 
 # Add from maven metadata in a jar file
 pom add /path/to/file.jar
+
+# Add by path to maven module
+pom add /path/to/module
+pom add /path/to/module/pom.xml
 ```
 
 For projects that are packaged as "pom", the dependencies will be added

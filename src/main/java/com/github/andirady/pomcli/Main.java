@@ -6,6 +6,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.logging.*;
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.io.DefaultModelReader;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -69,7 +70,14 @@ public class Main {
 	static Dependency stringToDependency(String s) {
         var path = Path.of(s);
         if (Files.isRegularFile(path)) {
-            return readCoordFromJarFile(path);
+            var filename = path.getFileName().toString();
+            if (filename.endsWith(".jar")) {
+                return readCoordFromJarFile(path);
+            } else if (filename.endsWith(".xml")) {
+                return readCoordFromPomFile(path);
+            }
+        } else if (Files.isDirectory(path)) {
+            return readCoordFromPomFile(path.resolve("pom.xml"));
         }
 
         var d = new Dependency();
@@ -114,6 +122,41 @@ public class Main {
                     return d;
                 }
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static Dependency readCoordFromPomFile(Path path) {
+        if (Files.notExists(path)) {
+            throw new TypeConversionException("File not found: " + path);
+        }
+
+        var pomReader = new DefaultModelReader();
+        try (var is = Files.newInputStream(path)) {
+            var pom = pomReader.read(is, null);
+            var d = new Dependency();
+            var g = pom.getGroupId();
+            var v = pom.getVersion();
+            var parent = pom.getParent();
+            if (parent != null) {
+                if (g == null || g.isBlank()) {
+                    g = parent.getGroupId();
+                }
+                if (v == null || g.isBlank()) {
+                    v = parent.getVersion();
+                }
+            }
+
+            if (g == null || v == null || g.isBlank() || v.isBlank()) {
+                throw new TypeConversionException(path + " is an invalid pom.");
+            }
+
+            d.setGroupId(g);
+            d.setArtifactId(pom.getArtifactId());
+            d.setVersion(v);
+
+            return d;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

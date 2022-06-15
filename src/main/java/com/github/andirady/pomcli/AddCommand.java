@@ -70,7 +70,9 @@ public class AddCommand implements Runnable {
     @Parameters(
         arity = "1..*",
         paramLabel = "DEPENDENCY",
-        description = "groupId:artifactId[:version] or path to a jar file."
+        description = """
+                      groupId:artifactId[:version] or path to either \
+                      a directory, pom.xml, or a jar file."""
     )
     List<Dependency> coords;
 
