@@ -6,8 +6,7 @@
     <version>0.0.1-SNAPSHOT</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
         <picocli.version>4.6.1</picocli.version>
         <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
     </properties>
@@ -66,13 +65,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-                <configuration>
-                    <compilerArgs>
-                        <arg>--upgrade-module-path</arg>
-                        <arg>${project.build.directory}/modules</arg>
-                    </compilerArgs>
-                </configuration>
+                <version>3.10.1</version>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
