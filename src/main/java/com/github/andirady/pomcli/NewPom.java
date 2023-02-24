@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.ModelReader;
 
@@ -44,6 +45,8 @@ public class NewPom {
                 props.setProperty("maven.compiler.target", majorVersion);
             } else {
                 props.setProperty("maven.compiler.release", majorVersion);
+
+                new AddPlugin().addPlugin(model, "maven-compiler-plugin");
             }
         }
         return model;
