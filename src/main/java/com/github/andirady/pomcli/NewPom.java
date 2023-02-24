@@ -35,9 +35,16 @@ public class NewPom {
         } else {
             // Only set java version on main poms.
             var props = model.getProperties();
+            // Use UTF-8 for default encoding.
+            props.setProperty("project.build.sourceEncoding", "UTF-8");
+
             var majorVersion = getJavaMajorVersion();
-            props.setProperty("maven.compiler.source", majorVersion);
-            props.setProperty("maven.compiler.target", majorVersion);
+            if (Integer.parseInt(majorVersion) < 9) {
+                props.setProperty("maven.compiler.source", majorVersion);
+                props.setProperty("maven.compiler.target", majorVersion);
+            } else {
+                props.setProperty("maven.compiler.release", majorVersion);
+            }
         }
         return model;
     }
