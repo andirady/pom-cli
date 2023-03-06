@@ -77,30 +77,29 @@
         <version>3.0.0-M9</version>
       </plugin>
       <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.0.0</version>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <id>generate-autocomplete</id>
             <phase>process-classes</phase>
             <goals>
-              <goal>run</goal>
+              <goal>java</goal>
             </goals>
+            <configuration>
+              <mainClass>picocli.AutoComplete</mainClass>
+              <arguments>
+                <argument>--force</argument>
+                <argument>--name</argument>
+                <argument>pom</argument>
+                <argument>--completionScript</argument>
+                <argument>${project.build.directory}/pom_completion</argument>
+                <argument>${exec.mainClass}</argument>
+              </arguments>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <target>
-            <java className="picocli.AutoComplete">
-              <classpath>
-                <path refid="maven.compile.classpath" />
-              </classpath>
-              <arg line="-f" />
-              <arg line="-n pom" />
-              <arg line="-o ${project.build.directory}/pom_completion" />
-              <arg line="${exec.mainClass}" />
-            </java>
-          </target>
-        </configuration>
       </plugin>
     </plugins>
   </build>
