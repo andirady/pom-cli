@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.FileSystem;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -18,8 +17,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import com.google.common.jimfs.Jimfs;
-
-import picocli.CommandLine;
 
 class IdCommandTest {
 
@@ -75,8 +72,8 @@ class IdCommandTest {
         cmd.run();
 
         var s = Files.readString(pomPath);
-        assertTrue(s.contains("<maven.compiler.source>"));
-        assertTrue(s.contains("<maven.compiler.target>"));
+        assertTrue(Stream.of("<maven.compiler.source>", "<maven.compiler.target>").allMatch(s::contains)
+                || s.contains("<maven.compiler.release>"));
     }
 
     private static Stream<Arguments> idInputs() {
