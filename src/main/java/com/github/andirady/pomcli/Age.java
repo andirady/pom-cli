@@ -4,18 +4,28 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
-import java.time.ZoneId;
 
 public record Age(long birth) {
 
-    @Override
-    public String toString() {
+    public Duration asDuration() {
         var now = Instant.now();
         var past = Instant.ofEpochMilli(birth);
-        var duration = Duration.between(past, now);
-        if (duration.toDaysPart() > 0) {
-            var zoneId = ZoneId.systemDefault();
-            var period = Period.between(LocalDate.ofInstant(past, zoneId), LocalDate.ofInstant(now, zoneId));
+        return Duration.between(past, now);
+    }
+
+    public Period asPeriod() {
+        return asPeriod(asDuration());
+    }
+
+    private Period asPeriod(Duration duration) {
+        return Period.between(LocalDate.now().minusDays(duration.toDays()), LocalDate.now());
+    }
+
+    @Override
+    public String toString() {
+        var duration = asDuration();
+        if (duration.toDays() > 0) {
+            var period = asPeriod(duration);
             if (period.getYears() > 0) {
                 return ago(period.getYears(), "a year");
             } else if (period.getMonths() > 0) {
