@@ -53,19 +53,12 @@ public class SearchCommand implements Runnable {
 
         int start = 0;
         int remaining = -1;
-        int width = 0;
         var loop = true;
 
         while (loop) {
             var req = new SolrSearchRequest(term, core, null, start, 40);
             var resp = solr.search(req).response();
             var docs = resp.docs();
-            var w = docs.stream().map(Document::id).mapToInt(String::length).max().orElse(0);
-            if (w > width) {
-                width = w;
-            }
-
-            var format = "%-" + width + "s %15s";
 
             if (remaining == -1) {
                 System.out.printf("Found %d%n", resp.numFound());
@@ -81,7 +74,7 @@ public class SearchCommand implements Runnable {
                 System.out.print(
                         stream.skip(i * 20)
                               .limit(20)
-                              .map(d -> String.format(format, d.id(), new Age(d.timestamp())))
+                              .map(d -> format(d))
                               .collect(joining(System.lineSeparator()))
                     );
                 
@@ -98,5 +91,21 @@ public class SearchCommand implements Runnable {
                 System.out.print("\r");
             }
         }
+    }
+
+    private String format(Document doc) {
+        var age = new Age(doc.timestamp());
+        var ageText = age.toString();
+        var years = age.asPeriod().getYears();
+        int col = 32;
+        if (years > 5) {
+            col = 90;
+        } else if (years > 2) {
+            col = 33;
+        }
+
+        return String.format("%-104s \033[" + col + "m%15s\033[0m",
+                             doc.id(),
+                             ageText);
     }
 }

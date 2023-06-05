@@ -31,10 +31,14 @@ class SearchCommandTest {
 			var solrSearch = new SolrSearch();
 			var now = Instant.now();
 			var docs = List.of(
-					new SolrSearchResult.Document("g:a:1", "g", "a", "1", null,
-							now.minus(Duration.ofDays(3)).toEpochMilli()), // oldest
 					new SolrSearchResult.Document("g:a:2", "g", "a", "2", null,
-							now.minus(Duration.ofDays(1)).toEpochMilli()) // newest
+							now.minus(Duration.ofDays(3 * 365 + 3)).toEpochMilli()), // 3 years old
+					new SolrSearchResult.Document("g:a:1", "g", "a", "1", null,
+							now.minus(Duration.ofDays(6 * 365 + 6)).toEpochMilli()), // ~6 years old
+					new SolrSearchResult.Document("g:a:3", "g", "a", "3", null,
+							now.minus(Duration.ofDays(3)).toEpochMilli()), // < 3 years old
+					new SolrSearchResult.Document("g:a:4", "g", "a", "4", null,
+							now.minus(Duration.ofDays(1)).toEpochMilli()) // latest
 				);
 			var resp = new SolrSearchResult.Response(docs.size(), 0, docs);
 			var result = new SolrSearchResult(resp);
@@ -45,11 +49,16 @@ class SearchCommandTest {
 			search.arg.gav = "g:a";
 			search.run(solrSearch);
 
-			assertEquals("""
-					Found 2
-					g:a:2       a day ago
-					g:a:1      3 days ago
-					""".replaceAll("\n", System.lineSeparator()), baos.toString());
+			var expected = """
+					Found 4
+					g:a:4                                                                                                    \033[32m      a day ago\033[0m
+					g:a:3                                                                                                    \033[32m     3 days ago\033[0m
+					g:a:2                                                                                                    \033[33m    3 years ago\033[0m
+					g:a:1                                                                                                    \033[90m    6 years ago\033[0m
+					""";
+            var actual = baos.toString();
+
+            assertEquals(expected, actual);
 		}
 	}
 }
