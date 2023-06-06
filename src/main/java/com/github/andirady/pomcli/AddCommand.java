@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import java.util.stream.Stream;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
@@ -22,7 +21,6 @@ import org.apache.maven.model.io.ModelReader;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.ExecutionException;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -35,19 +33,29 @@ public class AddCommand implements Runnable {
 
     static class Scope {
 
-        @Option(names = "--compile", description = "Add as compile dependency. This is the default", order = 0)
+        @Option(names = { "-c", "--compile" },
+                description = "Add as compile dependency. This is the default",
+                order = 0)
         boolean compile;
 
-        @Option(names = "--runtime", description = "Add as runtime dependency", order = 1)
+        @Option(names = { "-r", "--runtime" },
+                description = "Add as runtime dependency",
+                order = 1)
         boolean runtime;
 
-        @Option(names = "--provided", description = "Add as provided dependency", order = 2)
+        @Option(names = { "-p", "--provided" },
+                description = "Add as provided dependency",
+                order = 2)
         boolean provided;
 
-        @Option(names = "--test", description = "Add as test dependency", order = 3)
+        @Option(names = { "-t", "--test" },
+                description = "Add as test dependency",
+                order = 3)
         boolean test;
 
-        @Option(names = "--import", description = "Add as import dependency", order = 4)
+        @Option(names = { "-i", "--import" },
+                description = "Add as import dependency",
+                order = 4)
         boolean importScope;
 
         String value() {
@@ -58,7 +66,6 @@ public class AddCommand implements Runnable {
 
             return "compile";
         }
-
     }
 
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml", order = 0)
@@ -113,7 +120,7 @@ public class AddCommand implements Runnable {
         }
 
         var stream = coords.stream().parallel().map(this::ensureVersion);
-        if (scope != null && !"compile".equals(scope.value())) {
+        if (scope != null && !scope.compile) {
             stream = stream.map(d -> {
                 d.setScope(scope.value());
                 if (scope.importScope) {
@@ -151,7 +158,7 @@ public class AddCommand implements Runnable {
     }
 
     List<Dependency> getExistingDependencies() {
-        if (!"pom".equals(model.getPackaging())) {
+        if (!"pom".equals(model.getPackaging()) && (scope == null || !scope.importScope)) {
             return model.getDependencies();
         }
 

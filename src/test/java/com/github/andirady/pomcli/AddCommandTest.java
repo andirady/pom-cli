@@ -13,18 +13,15 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.maven.model.Dependency;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
@@ -34,6 +31,8 @@ import picocli.CommandLine;
 
 class AddCommandTest {
 
+    @TempDir
+    Path tempDir;
     FileSystem fs;
 
     @BeforeEach
@@ -87,13 +86,17 @@ class AddCommandTest {
                 </dependency>.*"""
             ),
             Arguments.of(new String[] { "add", "--import", "g:a:1" }, """
-                .*<dependency>\\s*\
+                .*<dependencyManagement>\\s*\
+                <dependencies>\\s*\
+                <dependency>\\s*\
                 <groupId>g</groupId>\\s*\
                 <artifactId>a</artifactId>\\s*\
                 <version>1</version>\\s*\
                 <type>pom</type>\\s*\
                 <scope>import</scope>\\s*\
-                </dependency>.*"""
+                </dependency>\\s*\
+                </dependencies>\\s*\
+                </dependencyManagement>.*"""
             )
         );
     }
@@ -289,7 +292,6 @@ class AddCommandTest {
 
     @Test
     void shouldFailIfFileHasNoMavenInfo() throws Exception {
-        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
         var libDir = tempDir.resolve("lib");
         var projectDir = tempDir.resolve("project");
         Files.createDirectory(libDir);
