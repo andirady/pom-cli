@@ -1,8 +1,8 @@
-[![Java CI with Maven](https://github.com/andirady/pomcli/actions/workflows/build.yml/badge.svg)](https://github.com/andirady/pomcli/actions/workflows/build.yml)
+[![Java CI with Maven](https://github.com/andirady/pom-cli/actions/workflows/build.yml/badge.svg)](https://github.com/andirady/pom-cli/actions/workflows/build.yml)
 
-# pomcli
+# pom-cli
 
-**pomcli** lets you quickly create a ``pom.xml`` file as well as update it without manually editing the file. It's written in Java and compiled to native code with the help of graalvm.
+**pom-cli** lets you quickly create a ``pom.xml`` file as well as update it without manually editing the file. It's written in Java and compiled to native code with the help of graalvm.
 
 Example flow:
 
