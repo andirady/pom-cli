@@ -26,7 +26,10 @@ public class IdCommand implements Runnable {
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
     Path pomPath;
 
-    @Parameters(arity = "0..1", paramLabel = "groupId:artifactId[:version]", description = {"Project id"})
+    @Option(names = { "-s", "--standalone" }, description = "Don't search for parent pom")
+    boolean standalone;
+
+    @Parameters(arity = "0..1", paramLabel = "groupId:artifactId[:version]", description = { "Project id" })
     String id;
 
     @Spec
@@ -78,7 +81,7 @@ public class IdCommand implements Runnable {
             }
         } else {
             LOG.fine(() -> "Creating new pom at " + pomPath);
-            pom = new NewPom().newPom(pomPath);
+            pom = new NewPom().newPom(pomPath, standalone);
         }
 
         parseId(id, pom);

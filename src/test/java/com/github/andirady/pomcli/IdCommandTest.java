@@ -1,11 +1,14 @@
 package com.github.andirady.pomcli;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.when;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.FileSystem;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 
 import com.google.common.jimfs.Jimfs;
 
@@ -62,18 +66,62 @@ class IdCommandTest {
         assertTrue(s.contains("<modelVersion>4.0.0</modelVersion>"));
     }
 
-    @Test
-    void shouldSetJavaVersionIfCreatingNewPom() throws IOException {
+    private static Stream<Arguments> javaVersions() {
+        return Stream.of(
+            Arguments.of(
+                "java 8",
+                """
+                openjdk version "1.8.0_372"
+                OpenJDK Runtime Environment (Temurin)(build 1.8.0_372-b07)
+                OpenJDK 64-Bit Server VM (Temurin)(build 25.372-b07, mixed mode)
+                """,
+                List.of("<maven.compiler.source>1.8</maven.compiler.source>",
+                        "<maven.compiler.target>1.8</maven.compiler.target>")
+
+            ),
+            Arguments.of(
+                "java 11",
+                """
+                openjdk version "11.0.12" 2021-07-20
+                OpenJDK Runtime Environment 18.9 (build 11.0.12+7)
+                OpenJDK 64-Bit Server VM 18.9 (build 11.0.12+7, mixed mode)
+                """,
+                List.of("<maven.compiler.release>11</maven.compiler.release>")
+            ),
+            Arguments.of(
+                "java 21-ea",
+                """
+                openjdk version "21-ea" 2023-09-19
+                OpenJDK Runtime Environment (build 21-ea+25-2212)
+                OpenJDK 64-Bit Server VM (build 21-ea+25-2212, mixed mode, sharing)
+                """,
+                List.of("<maven.compiler.release>21</maven.compiler.release>")
+            )
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("javaVersions")
+    void shouldSetJavaVersionIfCreatingNewPom(String name, String javaVersionOut, List<String> expectedContains)
+            throws IOException {
         var pomPath = fs.getPath("pom.xml");
         var projectId = "com.example:my-app:0.0.1";
 
-        cmd.pomPath = pomPath;
-        cmd.id = projectId;
-        cmd.run();
+        var mockProcess = Mockito.mock(Process.class);
+        when(mockProcess.getInputStream()).thenReturn(new ByteArrayInputStream(javaVersionOut.getBytes()));
+        try (
+            var mocked = Mockito.mockConstruction(ProcessBuilder.class, (mock, ctx) -> {
+                when(mock.redirectErrorStream(anyBoolean())).thenReturn(mock);
+                when(mock.start()).thenReturn(mockProcess);
+            })
+        ) {
+            cmd.pomPath = pomPath;
+            cmd.id = projectId;
+            cmd.run();
 
-        var s = Files.readString(pomPath);
-        assertTrue(Stream.of("<maven.compiler.source>", "<maven.compiler.target>").allMatch(s::contains)
-                || s.contains("<maven.compiler.release>"));
+            var s = Files.readString(pomPath);
+            assertTrue(expectedContains.stream().allMatch(s::contains), name);
+        }
     }
 
     private static Stream<Arguments> idInputs() {
@@ -190,6 +238,31 @@ class IdCommandTest {
         assertNotNull(matcher);
         assertTrue(matcher.find());
         assertEquals("jar a:c:1", cmd.readProjectId());
+    }
+
+    @Test
+    void shouldNotAddParentIfStandalone() throws Exception {
+        var aPath = fs.getPath("a");
+        var bPath = aPath.resolve("b");
+        var parentPomPath = aPath.resolve("pom.xml");
+        var pomPath = bPath.resolve("pom.xml");
+
+        Files.createDirectory(aPath);
+        Files.createDirectory(bPath);
+
+        var cmd = new IdCommand();
+        cmd.pomPath = parentPomPath;
+        cmd.id = "a:a:1";
+        cmd.as = "pom";
+        cmd.run();
+
+        cmd = new IdCommand();
+        cmd.standalone = true;
+        cmd.pomPath = pomPath;
+        cmd.id = "b";
+        cmd.run();
+
+        assertEquals("jar unnamed:b:0.0.1-SNAPSHOT", cmd.readProjectId());
     }
 
     @AfterEach

@@ -6,7 +6,7 @@
 
 Example flow:
 
-```console
+```bash
 # Change to the project directory
 cd my_app
 # Create folders
@@ -25,7 +25,7 @@ mvn package
 
 ### Setting project ID
 
-```console
+```bash
 pom id com.example:my-app
 pom id com.example:my-app:1.0.0
 pom id com.example:my-webapp --as=war
@@ -36,9 +36,31 @@ pom id com.example:.
 pom id com.example:.:1.0.0
 ```
 
+If the current folder belongs to a multi-module maven project,
+the ``<parent>`` element will be added to the pom. For example:
+```console
+$ cd hello
+$ pom id --as=pom com.example:.
+pom com.example:hello:0.0.1-SNAPSHOT
+$ mkdir api
+$ cd $_
+$ pom id hello-api
+jar com.example:hello-api:0.0.1-SNAPSHOT
+```
+
+If the project is meant to be standalone, then you can use the ``--standalone`` flag
+```console
+$ mkdir hello/sample
+$ cd $_
+$ pom id --standalone .
+jar unnamed:sample:0.0.1-SNAPSHOT
+```
+
+The resulting ``pom.xml`` will not have the ``<parent>`` element.
+
 ### Adding dependencies
 
-```console
+```bash
 # Add compile dependency
 pom add info.picocli:picocli
 
@@ -81,7 +103,7 @@ For example, if the parent pom contains the following declaration:
 
 Running the following:
 
-```console
+```bash
 pom add some-api
 ```
 
@@ -100,7 +122,7 @@ would results in the target ``pom.xml`` to contain the following:
 
 ### Setting properties
 
-```console
+```bash
 # Set single property
 pom set maven.compiler.source=17
 
@@ -113,7 +135,7 @@ pom set maven.compiler.{source,target}=17
 
 ### Search
 
-```console
+```bash
 # Search by artifact ID
 pom search log4j-api
 
@@ -132,6 +154,6 @@ This project requires Java 17+, Graal 22.1+ and Maven 3.8.4+.
 You can use [sdkman](https://sdkman.io/) to download them.
 
 To build, run
-```console
+```bash
 mvn -Pnative
 ```

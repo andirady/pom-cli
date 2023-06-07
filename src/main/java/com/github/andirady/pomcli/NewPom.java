@@ -6,21 +6,31 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
-import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.ModelReader;
 
 public class NewPom {
 
     private static final Logger LOG = Logger.getLogger(NewPom.class.getName());
+    private static final Pattern JAVA_VERSION_PATTERN = Pattern.compile("\"(\\d+)(-ea)?(\\.(\\d+))?(\\.(.+))?\"");
 
     public Model newPom(Path pomPath) {
+        return newPom(pomPath, false);
+    }
+
+    public Model newPom(Path pomPath, boolean standalone) {
         var model = new Model();
         model.setModelVersion("4.0.0");
-        var parentPom = findParentPom(pomPath, new DefaultModelReader());
+        ParentPom parentPom = null;
+        if (!standalone) {
+            parentPom = findParentPom(pomPath, new DefaultModelReader());
+        }
+
         if (parentPom != null) {
             var parent = new Parent();
             parent.setGroupId(parentPom.model().getGroupId());
@@ -40,7 +50,7 @@ public class NewPom {
             props.setProperty("project.build.sourceEncoding", "UTF-8");
 
             var majorVersion = getJavaMajorVersion();
-            if (Integer.parseInt(majorVersion) < 9) {
+            if (Double.parseDouble(majorVersion) < 9) {
                 props.setProperty("maven.compiler.source", majorVersion);
                 props.setProperty("maven.compiler.target", majorVersion);
             } else {
@@ -61,10 +71,12 @@ public class NewPom {
             ) {
                 return br.lines()
                          .findFirst()
-                         .map(s -> s.split("\""))
-                         .map(s -> s[1])
-                         .map(s -> s.split("\\."))
-                         .map(s -> s[0])
+                         .map(JAVA_VERSION_PATTERN::matcher)
+                         .filter(Matcher::find)
+                         .map(m -> {
+                             var i = m.group(1);
+                             return "1".equals(i) ? (i + m.group(3)) : i;
+                         })
                          .orElseThrow();
             }
         } catch (IOException e) {
