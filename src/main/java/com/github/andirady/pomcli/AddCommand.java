@@ -136,6 +136,11 @@ public class AddCommand implements Runnable {
         var writer = new DefaultModelWriter();
 		try (var os = Files.newOutputStream(pomPath)) {
             writer.write(os, null, model);
+            deps.forEach(d -> System.out.printf(
+                    "[%s] %s added%n",
+                    Objects.requireNonNullElse(d.getScope(), "compile"),
+                    coordString(d),
+                    Optional.ofNullable(d.getVersion()).map(":"::concat).orElse("")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -193,7 +198,7 @@ public class AddCommand implements Runnable {
         var latestVersion = new GetLatestVersion()
                 .execute(new QuerySpec(dep.getGroupId(), dep.getArtifactId(), null))
                 .orElseThrow(() -> new IllegalStateException(
-                        "No version found: '" + dep.getGroupId() + ":" + dep.getArtifactId() + "'"
+                        "No version found: '" + coordString(dep) + "'"
                     ));
         dep.setVersion(latestVersion);
 
@@ -211,7 +216,7 @@ public class AddCommand implements Runnable {
     String coordString(Dependency d) {
         return d.getGroupId() + ":"
              + d.getArtifactId()
-             + Optional.ofNullable(d.getClassifier()).map(c -> ":" + c).orElse("");
+             + Optional.ofNullable(d.getClassifier()).map(":"::concat).orElse("");
     }
 
 }
