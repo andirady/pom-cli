@@ -7,9 +7,11 @@
   <version>0.0.2-SNAPSHOT</version>
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
-    <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
-    <picocli.version>4.6.1</picocli.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
+    <picocli.version>4.7.4</picocli.version>
+    <jackson.version>2.14.1</jackson.version>
+    <junit.version>5.9.3</junit.version>
   </properties>
   <dependencies>
     <dependency>
@@ -20,17 +22,17 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.14.1</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.14.1</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-afterburner</artifactId>
-      <version>2.14.1</version>
+      <version>${jackson.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -40,7 +42,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.9.3</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -52,7 +54,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
-      <version>5.2.0</version>
+      <version>5.3.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
