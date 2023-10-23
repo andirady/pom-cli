@@ -6,7 +6,7 @@
   <artifactId>pomcli</artifactId>
   <version>0.9.0</version>
   <properties>
-    <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
     <picocli.version>4.7.4</picocli.version>
