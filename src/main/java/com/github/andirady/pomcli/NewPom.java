@@ -1,10 +1,11 @@
 package com.github.andirady.pomcli;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,8 +60,17 @@ public class NewPom {
                 new AddPlugin().addPlugin(model, "maven-compiler-plugin");
             }
         }
+
+        model.setVersion("0.0.1-SNAPSHOT");
+        model.setArtifactId(Path.of(System.getProperty("user.dir")).getFileName().toString());
+        if (model.getParent() == null) {
+            model.setGroupId(Objects.requireNonNullElse(System.getenv("POM_CLI_DEFAULT_GROUP_ID"), "unnamed"));
+            model.setVersion("0.0.1-SNAPSHOT");
+        }
+
         return model;
     }
+
 
     public String getJavaMajorVersion() {
         try {

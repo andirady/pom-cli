@@ -86,15 +86,6 @@ public class IdCommand implements Runnable {
 
         parseId(id, pom);
 
-        if (pom.getParent() == null) {
-            if (pom.getGroupId() == null) {
-                pom.setGroupId("unnamed");
-            }
-            if (pom.getVersion() == null) {
-                pom.setVersion("0.0.1-SNAPSHOT");
-            }
-        }
-
         if (as != null) {
             pom.setPackaging(as);
         }

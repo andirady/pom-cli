@@ -25,15 +25,34 @@ mvn package
 
 ### Setting project ID
 
-```bash
-pom id com.example:my-app
-pom id com.example:my-app:1.0.0
-pom id com.example:my-webapp --as=war
+```console
+$ pom id com.example:my-app
+jar com.example:my-app:0.0.1-SNAPSHOT
+$ pom id com.example:my-app:1.0.0
+jar com.example:my-app:1.0.0
+$ pom id com.example:my-webapp --as=war
+war com.example:my-webapp:0.0.1-SNAPSHOT
+```
 
-# Set artifact ID to current directory name
-pom id .
-pom id com.example:.
-pom id com.example:.:1.0.0
+Set artifact ID to current directory name
+```console
+$ cd my-app
+$ pom id .
+jar unnamed:my-app:0.0.1-SNAPSHOT
+$ pom id com.example:.
+jar com.example:my-app:0.0.1-SNAPSHOT
+$ pom id com.example:.:1.0.0
+jar com.example:my-app:1.0.0
+```
+
+By default, if the ``groupd_id`` is not specified, ``unnamed`` will be used.
+To set a different default ``group_id`` you can set the ``POM_CLI_DEFAULT_GROUP_ID`` environment variable.
+
+```
+$ export POM_CLI_DEFAULT_GROUP_ID=com.example
+$ cd my-app
+$ pom id .
+jar com.example:my-app:0.0.1-SNAPSHOT
 ```
 
 If the current folder belongs to a multi-module maven project,

@@ -101,11 +101,6 @@ public class AddCommand implements Runnable {
         } else {
             LOG.fine(() -> pomPath + " does not exists. Creating a new one");
             model = new NewPom().newPom(pomPath);
-            model.setArtifactId(Path.of(System.getProperty("user.dir")).getFileName().toString());
-            if (model.getParent() == null) {
-                model.setGroupId("unnamed");
-                model.setVersion("0.0.1-SNAPSHOT");
-            }
         }
 
         readParentPom(reader);
@@ -137,8 +132,14 @@ public class AddCommand implements Runnable {
 		try (var os = Files.newOutputStream(pomPath)) {
             writer.write(os, null, model);
             deps.forEach(d -> System.out.printf(
-                    "[%s] %s added%n",
-                    Objects.requireNonNullElse(d.getScope(), "compile"),
+                    "%s %s%s added%n",
+                    switch (Objects.requireNonNullElse(d.getScope(), "compile")) {
+                        case "provided" -> "📦";
+                        case "runtime" -> "🏃";
+                        case "test" -> "🔬";
+                        case "import" -> "🚢";
+                        default -> "🔨";
+                    },
                     coordString(d),
                     Optional.ofNullable(d.getVersion()).map(":"::concat).orElse("")));
         } catch (IOException e) {
