@@ -48,7 +48,7 @@ jar com.example:my-app:1.0.0
 By default, if the ``groupd_id`` is not specified, ``unnamed`` will be used.
 To set a different default ``group_id`` you can set the ``POM_CLI_DEFAULT_GROUP_ID`` environment variable.
 
-```
+```console
 $ export POM_CLI_DEFAULT_GROUP_ID=com.example
 $ cd my-app
 $ pom id .
