@@ -1,14 +1,17 @@
 package com.github.andirady.pomcli;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
-import java.nio.file.FileSystem;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -18,52 +21,69 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 
-import com.google.common.jimfs.Jimfs;
+import com.github.andirady.pomcli.impl.ConfigTestImpl;
+import com.github.andirady.pomcli.impl.GetJavaMajorVersionTestImpl;
 
-class IdCommandTest {
+import picocli.CommandLine;
 
+class IdCommandTest extends BaseTest {
 
-    IdCommand cmd;
-    FileSystem fs;
+    private static final Logger LOG = Logger.getLogger(IdCommandTest.class.getName());
+
+    CommandLine underTest;
+    Path projectPath;
 
     @BeforeEach
     void setup() {
-        fs = Jimfs.newFileSystem();
-        cmd = new IdCommand();
+        var app = new Main();
+        underTest = new CommandLine(app);
+        projectPath = getTempPath();
     }
 
     @Test
     void shouldFailIfNoIdAndNoExistingPom() {
-        var pomPath = fs.getPath("pom.xml");
+        var pomPath = projectPath.resolve("pom.xml");
 
-        cmd.pomPath = pomPath;
-        assertThrows(Exception.class, cmd::run);
+        var ec = underTest.execute("id", "-f", pomPath.toString());
+        assertSame(1, ec);
     }
 
     @Test
-    void shouldCreateNewFileIfPomNotExists() {
-        var pomPath = fs.getPath("pom.xml");
+    void shouldCreateNewFileIfPomNotExists() throws IOException {
+        var pomPath = projectPath.resolve("pom.xml");
+
         var projectId = "com.example:my-app:0.0.1";
 
-        cmd.pomPath = pomPath;
-        cmd.id = projectId;
-        cmd.run();
-        assertTrue(Files.exists(cmd.pomPath));
-    }
+        var ec = underTest.execute("id", "-f", pomPath.toString(), projectId);
 
-    @Test
-    void shouldSetModelVersionIfCreatingNewPom() throws IOException {
-        var pomPath = fs.getPath("pom.xml");
-        var projectId = "com.example:my-app:0.0.1";
-
-        cmd.pomPath = pomPath;
-        cmd.id = projectId;
-        cmd.run();
-
+        assertSame(0, ec);
+        assertTrue(Files.exists(pomPath));
         var s = Files.readString(pomPath);
         assertTrue(s.contains("<modelVersion>4.0.0</modelVersion>"));
+    }
+
+    @Test
+    void useCustomDefaultGroupId() throws IOException {
+        
+        if (Config.getInstance() instanceof ConfigTestImpl cfg) {
+            cfg.setDefaultGroupId("com.example");
+        }
+
+        var pomPath = projectPath.resolve(Path.of("my-app", "pom.xml"));
+        var expected = "jar com.example:my-app:0.0.1-SNAPSHOT";
+
+        Files.createDirectories(pomPath.getParent());
+
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
+
+        var ec = underTest.execute("id", "-f", pomPath.toString(), ".");
+
+        var actual = out.toString().trim();
+
+        assertSame(0, ec);
+        assertEquals(expected, actual);
     }
 
     private static Stream<Arguments> javaVersions() {
@@ -104,24 +124,17 @@ class IdCommandTest {
     @MethodSource("javaVersions")
     void shouldSetJavaVersionIfCreatingNewPom(String name, String javaVersionOut, List<String> expectedContains)
             throws IOException {
-        var pomPath = fs.getPath("pom.xml");
+        var pomPath = projectPath.resolve("pom.xml");
         var projectId = "com.example:my-app:0.0.1";
 
-        var mockProcess = Mockito.mock(Process.class);
-        when(mockProcess.getInputStream()).thenReturn(new ByteArrayInputStream(javaVersionOut.getBytes()));
-        try (
-            var mocked = Mockito.mockConstruction(ProcessBuilder.class, (mock, ctx) -> {
-                when(mock.redirectErrorStream(anyBoolean())).thenReturn(mock);
-                when(mock.start()).thenReturn(mockProcess);
-            })
-        ) {
-            cmd.pomPath = pomPath;
-            cmd.id = projectId;
-            cmd.run();
-
-            var s = Files.readString(pomPath);
-            assertTrue(expectedContains.stream().allMatch(s::contains), name);
+        if (GetJavaMajorVersion.getInstance() instanceof GetJavaMajorVersionTestImpl gjmv) {
+            gjmv.setResult(javaVersionOut);
         }
+
+        underTest.execute("id", "-f", pomPath.toString(), projectId);
+
+        var s = Files.readString(pomPath);
+        assertTrue(expectedContains.stream().allMatch(s::contains), name);
     }
 
     private static Stream<Arguments> idInputs() {
@@ -138,40 +151,48 @@ class IdCommandTest {
     @ParameterizedTest
     @MethodSource("idInputs")
     void shouldMatchExpected(String id, String packaging, String expectedOutput) throws Exception {
-        var projectPath = fs.getPath("my-app");
+        var projectPath = getTempPath().resolve("my-app");
         var pomPath = projectPath.resolve("pom.xml");
 
         Files.createDirectory(projectPath);
 
-        cmd.pomPath = pomPath;
-        cmd.id = id;
-        cmd.as = packaging;
-		try {
-			cmd.run();
-		} catch (Exception e) {
-            e.printStackTrace();
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
+
+        int ec;
+
+        if (packaging == null) {
+            ec = underTest.execute("id", "-f", pomPath.toString(), id);
+        } else {
+            ec = underTest.execute("id", "-f", pomPath.toString(), "--as=" + packaging, id);
         }
-        assertEquals(expectedOutput, cmd.readProjectId());
+
+        assertSame(0, ec);
+        assertEquals(expectedOutput, out.toString().trim());
     }
 
     @Test
     void shouldUpdateExistingPom() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
-        var projectId = "my-app";
+        var pomPath = projectPath.resolve("pom.xml");
 
-        cmd.pomPath = pomPath;
-        cmd.id = projectId;
-        cmd.run();
+        var underTest = new CommandLine(new Main());
 
-        cmd.id = "com.example:my-app";
-        cmd.as = "pom";
-        cmd.run();
-        assertEquals("pom com.example:my-app:0.0.1-SNAPSHOT", cmd.readProjectId());
+        underTest.execute("id", "-f", pomPath.toString(), ".");
+        assertTrue(Files.exists(pomPath));
+
+        var id = "com.example:my-app";
+
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
+
+        underTest.execute("id", "-f", pomPath.toString(), "--as=pom", id);
+
+        assertEquals("pom com.example:my-app:0.0.1-SNAPSHOT", out.toString().trim());
     }
 
     @Test
     void shouldAddParentIfAPomProjectIsFoundInTheParentDirectory() throws Exception {
-        var aPath = fs.getPath("a");
+        var aPath = projectPath.resolve("a");
         var bPath = aPath.resolve("b");
         var parentPomPath = aPath.resolve("pom.xml");
         var pomPath = bPath.resolve("pom.xml");
@@ -179,16 +200,17 @@ class IdCommandTest {
         Files.createDirectory(aPath);
         Files.createDirectory(bPath);
 
-        var cmd = new IdCommand();
-        cmd.pomPath = parentPomPath;
-        cmd.id = "a:a:1";
-        cmd.as = "pom";
-        cmd.run();
+        var underTest = new CommandLine(new Main());
+        // Create the parent
+        underTest.execute("id", "-f", parentPomPath.toString(), "--as=pom", "a:a:1");
+        LOG.fine(Files.readString(parentPomPath));
 
-        cmd = new IdCommand();
-        cmd.pomPath = pomPath;
-        cmd.id = "b";
-        cmd.run();
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
+
+        // Create the child
+        underTest.execute("id", "-f", pomPath.toString(), ".");
+        LOG.fine(Files.readString(pomPath));
 
         var pat = Pattern.compile("""
                 .*<parent>\\s*\
@@ -200,12 +222,12 @@ class IdCommandTest {
         var matcher = pat.matcher(s);
         assertNotNull(matcher);
         assertTrue(matcher.find());
-        assertEquals("jar a:b:1", cmd.readProjectId());
+        assertEquals("jar a:b:1", out.toString().trim());
     }
 
     @Test
     void shouldAddParentIfAPomProjectIsFoundAboveTheDirectoryTree() throws Exception {
-        var aPath = fs.getPath("a");
+        var aPath = projectPath.resolve("a");
         var bPath = aPath.resolve("b");
         var cPath = bPath.resolve("c");
         var parentPomPath = aPath.resolve("pom.xml");
@@ -215,16 +237,17 @@ class IdCommandTest {
         Files.createDirectory(bPath);
         Files.createDirectory(cPath);
 
-        var cmd = new IdCommand();
-        cmd.pomPath = parentPomPath;
-        cmd.id = "a:a:1";
-        cmd.as = "pom";
-        cmd.run();
+        var underTest = new CommandLine(new Main());
+        // Create the parent
+        underTest.execute("id", "-f", parentPomPath.toString(), "--as=pom", "a:a:1");
+        LOG.fine(Files.readString(parentPomPath));
 
-        cmd = new IdCommand();
-        cmd.pomPath = pomPath;
-        cmd.id = "c";
-        cmd.run();
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
+
+        // Create the grandchild
+        underTest.execute("id", "-f", pomPath.toString(), ".");
+        LOG.fine(Files.readString(pomPath));
 
         var pat = Pattern.compile("""
                 .*<parent>\\s*\
@@ -237,12 +260,12 @@ class IdCommandTest {
         var matcher = pat.matcher(s);
         assertNotNull(matcher);
         assertTrue(matcher.find());
-        assertEquals("jar a:c:1", cmd.readProjectId());
+        assertEquals("jar a:c:1", out.toString().trim());
     }
 
     @Test
     void shouldNotAddParentIfStandalone() throws Exception {
-        var aPath = fs.getPath("a");
+        var aPath = projectPath.resolve("a");
         var bPath = aPath.resolve("b");
         var parentPomPath = aPath.resolve("pom.xml");
         var pomPath = bPath.resolve("pom.xml");
@@ -250,24 +273,24 @@ class IdCommandTest {
         Files.createDirectory(aPath);
         Files.createDirectory(bPath);
 
-        var cmd = new IdCommand();
-        cmd.pomPath = parentPomPath;
-        cmd.id = "a:a:1";
-        cmd.as = "pom";
-        cmd.run();
+        var underTest = new CommandLine(new Main());
+        // Create the parent
+        underTest.execute("id", "-f", parentPomPath.toString(), "--as=pom", "a:a:1");
+        LOG.fine(Files.readString(parentPomPath));
 
-        cmd = new IdCommand();
-        cmd.standalone = true;
-        cmd.pomPath = pomPath;
-        cmd.id = "b";
-        cmd.run();
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
 
-        assertEquals("jar unnamed:b:0.0.1-SNAPSHOT", cmd.readProjectId());
+        // Create the child
+        underTest.execute("id", "-f", pomPath.toString(), "--standalone", ".");
+        LOG.fine(Files.readString(pomPath));
+
+        assertEquals("jar unnamed:b:0.0.1-SNAPSHOT", out.toString().trim());
     }
 
     @AfterEach
     void cleanup() throws IOException {
-        fs.close();
+        deleteRecursive(projectPath);
     }
 
 }

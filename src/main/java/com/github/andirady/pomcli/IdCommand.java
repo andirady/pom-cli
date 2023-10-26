@@ -43,7 +43,7 @@ public class IdCommand implements Runnable {
             throw new IllegalStateException("No such file: " + pomPath);
         }
 
-        System.out.println(readProjectId());
+        spec.commandLine().getOut().println(readProjectId());
     }
 
     String readProjectId() {
@@ -110,6 +110,9 @@ public class IdCommand implements Runnable {
 
         if (parts.length >= 3) {
             pom.setVersion(parts[2]);
+        } else if (pom.getParent() != null) {
+            // Ensure version is not set if <parent> is present
+            pom.setVersion(null);
         }
 
         if (".".equals(pom.getArtifactId())) {
