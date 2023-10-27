@@ -12,12 +12,17 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
+import picocli.CommandLine.Model.CommandSpec;
 
 @Command(name = "search")
 public class SearchCommand implements Runnable {
 
     @ArgGroup(exclusive = true, multiplicity = "1")
     Exclusive arg;
+
+    @Spec
+    CommandSpec spec;
 
     static class Exclusive {
         @Parameters(arity = "1")
@@ -32,11 +37,7 @@ public class SearchCommand implements Runnable {
 
     @Override
     public void run() {
-        var solr = new SolrSearch();
-        run(solr);
-    }
-
-    void run(SolrSearch solr) {
+        var solr = SearchProvider.getInstance();
         var core = "";
         var sort = false;
         String term;
@@ -61,7 +62,7 @@ public class SearchCommand implements Runnable {
             var docs = resp.docs();
 
             if (remaining == -1) {
-                System.out.printf("Found %d%n", resp.numFound());
+                spec.commandLine().getOut().printf("Found %d%n", resp.numFound());
                 remaining = resp.numFound();
             }
 
@@ -71,7 +72,7 @@ public class SearchCommand implements Runnable {
                     stream = stream.sorted(Comparator.comparingLong(Document::timestamp).reversed());
                 }
 
-                System.out.print(
+                spec.commandLine().getOut().print(
                         stream.skip(i * 20)
                               .limit(20)
                               .map(d -> format(d))
@@ -88,7 +89,7 @@ public class SearchCommand implements Runnable {
                 }
 
                 System.console().readLine("\r");
-                System.out.print("\r");
+                spec.commandLine().getOut().print("\r");
             }
         }
     }

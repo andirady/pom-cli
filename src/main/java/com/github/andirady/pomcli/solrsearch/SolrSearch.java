@@ -4,6 +4,8 @@ package com.github.andirady.pomcli.solrsearch;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.github.andirady.pomcli.SearchProvider;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -21,11 +23,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-public class SolrSearch {
+public class SolrSearch implements SearchProvider {
 
     private static final ObjectMapper OM = JsonMapper.builder().addModule(new AfterburnerModule()).build();
     private static final HttpClient httpClient = HttpClient.newHttpClient();
 
+    @Override
     public SolrSearchResult search(SolrSearchRequest req) {
         var httpReq = HttpRequest.newBuilder(makeUri(req)).GET()
                 .headers("Accept", "application/json", "Accept-Encoding", "gzip").build();

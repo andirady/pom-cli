@@ -1,133 +1,86 @@
 package com.github.andirady.pomcli;
 
-import org.apache.maven.model.io.DefaultModelReader;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
-import java.io.File;
-import java.util.Comparator;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 
-import org.apache.maven.model.Dependency;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
+import org.w3c.dom.NodeList;
 
-import com.google.common.jimfs.Jimfs;
 import picocli.CommandLine;
 
-class AddCommandTest {
+class AddCommandTest extends BaseTest {
 
+    CommandLine underTest;
     @TempDir
     Path tempDir;
-    FileSystem fs;
 
     @BeforeEach
     void setup() {
-        fs = Jimfs.newFileSystem();
+        var app = new Main();
+        underTest = Main.createCommandLine(app);
     }
 
     @AfterEach
-    void cleanup() throws Exception {
-        fs.close();
+    void cleanUp() {
+        deleteRecursive(tempDir);
     }
 
-    static Stream<Arguments> successArgs() {
+    private int evalXpath(Path pomPath, String expr) {
+        try (var is = Files.newInputStream(pomPath)) {
+            var dbf = DocumentBuilderFactory.newInstance();
+            var db = dbf.newDocumentBuilder();
+            var doc = db.parse(is);
+            var xpath = XPathFactory.newInstance().newXPath();
+
+            return ((NodeList) xpath.evaluate(expr, doc, XPathConstants.NODESET)).getLength();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static Stream<Arguments> addToScope() {
         return Stream.of(
-            Arguments.of(new String[] { "add", "g:a:1" }, """
-                .*<dependency>\\s*\
-                <groupId>g</groupId>\\s*\
-                <artifactId>a</artifactId>\\s*\
-                <version>1</version>\\s*\
-                </dependency>.*"""
-            ),
-            Arguments.of(new String[] { "add", "--compile", "g:a:1" }, """
-                .*<dependency>\\s*\
-                <groupId>g</groupId>\\s*\
-                <artifactId>a</artifactId>\\s*\
-                <version>1</version>\\s*\
-                </dependency>.*"""
-            ),
-            Arguments.of(new String[] { "add", "--test", "g:a:1" }, """
-                .*<dependency>\\s*\
-                <groupId>g</groupId>\\s*\
-                <artifactId>a</artifactId>\\s*\
-                <version>1</version>\\s*\
-                <scope>test</scope>\\s*\
-                </dependency>.*"""
-            ),
-            Arguments.of(new String[] { "add", "--provided", "g:a:1" }, """
-                .*<dependency>\\s*\
-                <groupId>g</groupId>\\s*\
-                <artifactId>a</artifactId>\\s*\
-                <version>1</version>\\s*\
-                <scope>provided</scope>\\s*\
-                </dependency>.*"""
-            ),
-            Arguments.of(new String[] { "add", "--runtime", "g:a:1" }, """
-                .*<dependency>\\s*\
-                <groupId>g</groupId>\\s*\
-                <artifactId>a</artifactId>\\s*\
-                <version>1</version>\\s*\
-                <scope>runtime</scope>\\s*\
-                </dependency>.*"""
-            ),
-            Arguments.of(new String[] { "add", "--import", "g:a:1" }, """
-                .*<dependencyManagement>\\s*\
-                <dependencies>\\s*\
-                <dependency>\\s*\
-                <groupId>g</groupId>\\s*\
-                <artifactId>a</artifactId>\\s*\
-                <version>1</version>\\s*\
-                <type>pom</type>\\s*\
-                <scope>import</scope>\\s*\
-                </dependency>\\s*\
-                </dependencies>\\s*\
-                </dependencyManagement>.*"""
-            )
+            Arguments.of(null, "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and not(scope)]"),
+            Arguments.of("--compile", "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and not(scope)]"),
+            Arguments.of("--test", "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='test']"),
+            Arguments.of("--provided", "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='provided']"),
+            Arguments.of("--runtime", "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='runtime']"),
+            Arguments.of("--import", "/project/dependencyManagement/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='import']")
         );
     }
 
     @ParameterizedTest
-    @MethodSource("successArgs")
-    void shouldSuccess(String[] args, String expectedPattern) throws Exception {
-        var pomPath = fs.getPath("pom.xml");
+    @MethodSource
+    void addToScope(String scope, String xpathExpr) throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
 
-        try (var paths = Mockito.mockStatic(Path.class)) {
-            //paths.when(Path::of).thenReturn(fs.getPath("foo"));
-            paths.when(() -> Path.of(ArgumentMatchers.anyString()))
-                 .thenAnswer(inv -> fs.getPath((String) inv.getArguments()[0]));
+        var gav = "g:a:1";
+        var ec = scope == null
+               ? underTest.execute("add", "-f", pomPath.toString(), gav)
+               : underTest.execute("add", scope, "-f", pomPath.toString(), gav);
 
-            var app = new Main();
-            var cmd = new CommandLine(app);
-            cmd.registerConverter(Dependency.class, Main::stringToDependency);
-            var rc = cmd.execute(args);
-            assertEquals(0, rc);
-        }
-
-        var pat = Pattern.compile(expectedPattern, Pattern.MULTILINE);
-        var s = Files.readString(pomPath);
-        var matcher = pat.matcher(s);
-        assertNotNull(matcher);
-        assertTrue(matcher.find(), "Does not match /" + expectedPattern + "/ pattern");
+        assertSame(0, ec);
+        assertSame(1, evalXpath(pomPath, xpathExpr), "Nodes matching xpath for scope " + scope);
     }
 
     @Test
-    void shouldFailIfAlreadAdded() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
+    void failIfDuplicateSingle() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
         Files.writeString(pomPath, """
             <project>
                 <dependencies>
@@ -140,21 +93,13 @@ class AddCommandTest {
             </project>
             """);
 
-        var cmd = new AddCommand();
-        cmd.pomPath = pomPath;
-        cmd.coords = new ArrayList<>();
-        var d = new Dependency();
-        d.setGroupId("g");
-        d.setArtifactId("a");
-        d.setVersion("2");
-        cmd.coords.add(d);
-        var e = assertThrows(Exception.class, cmd::run);
-        assertEquals("Duplicate artifact(s): g:a", e.getMessage());
+        var ec = underTest.execute("add", "-f", pomPath.toString(), "g:a:2");
+        assertSame(1, ec);
     }
 
     @Test
-    void shouldFailIfMultipleAlreadAdded() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
+    void failIfDuplicateMultiple() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
         Files.writeString(pomPath, """
             <project>
                 <dependencies>
@@ -172,30 +117,11 @@ class AddCommandTest {
             </project>
             """);
 
-        var cmd = new AddCommand();
-        cmd.pomPath = pomPath;
-        cmd.coords = new ArrayList<>();
-        var d = new Dependency();
-        d.setGroupId("a");
-        d.setArtifactId("a");
-        d.setVersion("2");
-        cmd.coords.add(d);
-        d = new Dependency();
-        d.setGroupId("b");
-        d.setArtifactId("b");
-        d.setVersion("2");
-        cmd.coords.add(d);
-        d = new Dependency();
-        d.setGroupId("c");
-        d.setArtifactId("c");
-        d.setVersion("2");
-        cmd.coords.add(d);
-
-        var e = assertThrows(Exception.class, cmd::run);
-        assertEquals("Duplicate artifact(s): a:a, b:b", e.getMessage());
+        var ec = underTest.execute("add", "-f", pomPath.toString(), "a:a:2", "b:b:2");
+        assertSame(1, ec);
     }
 
-    private static Stream<Arguments> provideDeps() {
+    static Stream<Arguments> excludeVersionForParentManaged() {
         return Stream.of(
             Arguments.of("g:a"),
             Arguments.of("a")
@@ -203,9 +129,9 @@ class AddCommandTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideDeps")
-    void shouldReadDependencyManagementFromParentPom(String d) throws Exception {
-        var base = fs.getPath("app");
+    @MethodSource
+    void excludeVersionForParentManaged(String d) throws Exception {
+        var base = tempDir.resolve("app");
         Files.createDirectory(base);
 
         var parentPomPath = base.resolve("pom.xml");
@@ -228,31 +154,19 @@ class AddCommandTest {
             """);
 
         var submodulePath = base.resolve("child");
+        var pomPath = submodulePath.resolve("pom.xml");
         Files.createDirectory(submodulePath);
 
-        var cmd = new AddCommand();
-        cmd.pomPath = submodulePath.resolve("pom.xml");
-        cmd.coords = new ArrayList<>();
-        cmd.coords.add(Main.stringToDependency(d));
+        var ec = underTest.execute("add", "-f", pomPath.toString(), d);
+        assertSame(0, ec);
 
-        cmd.run();
-
-        var p = Pattern.compile("""
-                .*<dependencies>\\s*\
-                <dependency>\\s*\
-                <groupId>g</groupId>\\s*\
-                <artifactId>a</artifactId>\\s*\
-                </dependency>\\s*\
-                </dependencies>""", Pattern.MULTILINE);
-        var s = Files.readString(cmd.pomPath);
-        var m = p.matcher(s);
-        assertNotNull(m);
-        assertTrue(m.find());
+        var matched = evalXpath(pomPath, "/project/dependencies/dependency[groupId='g' and artifactId='a' and not(version)]");
+        assertSame(1, matched, "Nodes matching");
     }
 
     @Test
-    void shouldAddToDependencyManagementIfPackagedAsPom() throws Exception {
-        var pomPath = fs.getPath("pom.xml");
+    void addAsManangedDependencyForPomPackaging() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
         Files.writeString(pomPath, """
                 <project>
                     <modelVersion>4.0.0</modelVersion>
@@ -263,35 +177,14 @@ class AddCommandTest {
                 </project>
                 """);
 
-        var cmd = new AddCommand();
-        cmd.pomPath = pomPath;
-        cmd.coords = new ArrayList<>();
-        var d = new Dependency();
-        d.setGroupId("b");
-        d.setArtifactId("b");
-        d.setVersion("1");
-        cmd.coords.add(d);
+        underTest.execute("add", "-f", pomPath.toString(), "b:b:1");
 
-        cmd.run();
-
-        var p = Pattern.compile("""
-                .*<dependencyManagement>\\s*\
-                <dependencies>\\s*\
-                <dependency>\\s*\
-                <groupId>b</groupId>\\s*\
-                <artifactId>b</artifactId>\\s*\
-                <version>1</version>\\s*\
-                </dependency>\\s*\
-                </dependencies>\\s*\
-                </dependencyManagement>""", Pattern.MULTILINE);
-        var s = Files.readString(pomPath);
-        var m = p.matcher(s);
-        assertNotNull(m);
-        assertTrue(m.find());
+        var matched = evalXpath(pomPath, "/project/dependencyManagement/dependencies/dependency[groupId='b']");
+        assertSame(1, matched, "Nodes matching");
     }
 
     @Test
-    void shouldFailIfFileHasNoMavenInfo() throws Exception {
+    void failIfJarHasNoMavenInfo() throws Exception {
         var libDir = tempDir.resolve("lib");
         var projectDir = tempDir.resolve("project");
         Files.createDirectory(libDir);
@@ -301,17 +194,12 @@ class AddCommandTest {
         try (var zip = new ZipOutputStream(Files.newOutputStream(jarPath))) {
         }
 
-        var app = new Main();
-        var cmd = Main.createCommandLine(app);
-        var rc = cmd.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
-        assertSame(picocli.CommandLine.ExitCode.USAGE, rc);
-
-        deleteRecursive(tempDir);
+        var ec = underTest.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
+        assertSame(picocli.CommandLine.ExitCode.USAGE, ec);
     }
 
     @Test
-    void canAddByReadingMavenInfoFromJarFile() throws Exception {
-        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
+    void addByJarWithMavenInfo() throws Exception {
         var libDir = tempDir.resolve("lib");
         var projectDir = tempDir.resolve("project");
         Files.createDirectory(libDir);
@@ -330,17 +218,12 @@ class AddCommandTest {
             zip.closeEntry();
         }
 
-        var app = new Main();
-        var cmd = Main.createCommandLine(app);
-        var rc = cmd.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
-        assertSame(picocli.CommandLine.ExitCode.OK, rc);
-
-        deleteRecursive(tempDir);
+        var ec = underTest.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
+        assertSame(0, ec);
     }
 
     @Test
     void shouldFailWhenAddingPathWithoutPomXml() throws Exception {
-        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
         var parentDir = tempDir.resolve("hello");
         var apiDir = parentDir.resolve("hello-api");
         var coreDir = parentDir.resolve("hello-core");
@@ -369,17 +252,12 @@ class AddCommandTest {
                 </project>
                 """);
 
-        var app = new Main();
-        var cmd = Main.createCommandLine(app);
-        var rc = cmd.execute("add", "-f", coreDir.resolve("pom.xml").toString(), apiDir.toString());
-        assertSame(picocli.CommandLine.ExitCode.USAGE, rc);
-
-        deleteRecursive(tempDir);
+        var ec = underTest.execute("add", "-f", coreDir.resolve("pom.xml").toString(), apiDir.toString());
+        assertSame(picocli.CommandLine.ExitCode.USAGE, ec);
     }
 
     @Test
     void canAddByPath() throws Exception {
-        var tempDir = Files.createTempDirectory(getClass().getCanonicalName());
         var parentDir = tempDir.resolve("hello");
         var apiDir = parentDir.resolve("hello-api");
         var coreDir = parentDir.resolve("hello-core");
@@ -407,7 +285,9 @@ class AddCommandTest {
                     <artifactId>hello-api</artifactId>
                 </project>
                 """);
-        Files.writeString(coreDir.resolve("pom.xml"), """
+
+        var pomPath = coreDir.resolve("pom.xml");
+        Files.writeString(pomPath, """
                 <project>
                     <modelVersion>4.0.0</modelVersion>
                     <parent>
@@ -419,25 +299,11 @@ class AddCommandTest {
                 </project>
                 """);
 
-        var app = new Main();
-        var cmd = Main.createCommandLine(app);
-        var rc = cmd.execute("add", "-f", coreDir.resolve("pom.xml").toString(), apiDir.toString());
-        assertSame(picocli.CommandLine.ExitCode.OK, rc);
+        var ec = underTest.execute("add", "-f", pomPath.toString(), apiDir.toString());
+        assertSame(0, ec);
 
-        var pomReader = new DefaultModelReader();
-        try (var is = Files.newInputStream(coreDir.resolve("pom.xml"))) {
-            var pom = pomReader.read(is, null);
-            assertTrue(pom.getDependencies().stream().anyMatch(d -> "hello-api".equals(d.getArtifactId())));
-        }
-
-        deleteRecursive(tempDir);
+        var matched = evalXpath(pomPath, "/project/dependencies/dependency[artifactId='hello-api']");
+        assertSame(1, matched, "Nodes matching");
     }
 
-    private void deleteRecursive(Path dir) throws Exception {
-        try (var stream = Files.walk(dir)) {
-            stream.sorted(Comparator.reverseOrder())
-                  .map(Path::toFile)
-                  .forEach(File::delete);
-        }
-    }
 }
