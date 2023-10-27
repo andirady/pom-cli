@@ -1,7 +1,9 @@
 package com.github.andirady.pomcli;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -303,6 +305,55 @@ class AddCommandTest extends BaseTest {
         assertSame(0, ec);
 
         var matched = evalXpath(pomPath, "/project/dependencies/dependency[artifactId='hello-api']");
+        assertSame(1, matched, "Nodes matching");
+    }
+
+    @Test
+    void addUsingArtifactIdWhenManagedByParent() throws IOException {
+        var parentPomPath = tempDir.resolve("pom.xml");
+        var childDir = tempDir.resolve("api");
+
+        Files.writeString(parentPomPath, """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>g</groupId>
+                    <artifactId>a</artifactId>
+                    <version>1</version>
+                    <packaging>pom</packaging>
+                    <dependencyManagement>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.fasterxml.jackson.core</groupId>
+                                <artifactId>jackson-databind</artifactId>
+                                <version>2.14.0</version>
+                            </dependency>
+                        </dependencies>
+                    </dependencyManagement>
+                    <modules>
+                        <module>api</module>
+                    </modules>
+                </project>
+                """);
+
+        Files.createDirectory(childDir);
+        var pomPath = childDir.resolve("pom.xml");
+
+        Files.writeString(pomPath, """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <parent>
+                        <groupId>g</groupId>
+                        <artifactId>a</artifactId>
+                        <version>1</version>
+                        <relativePath>..</relativePath>
+                    </parent>
+                </project>
+                """);
+
+        var ec = underTest.execute("add", "-f", pomPath.toString(), "jackson-databind");
+        assertSame(0, ec);
+
+        var matched = evalXpath(pomPath, "/project/dependencies/dependency[groupId='com.fasterxml.jackson.core' and artifactId='jackson-databind' and not(version)]");
         assertSame(1, matched, "Nodes matching");
     }
 
