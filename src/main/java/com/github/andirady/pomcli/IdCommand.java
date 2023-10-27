@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
@@ -14,9 +14,10 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
+import picocli.CommandLine.Help.Ansi;
 
 @Command(name = "id")
-public class IdCommand implements Runnable {
+public class IdCommand implements Callable<Integer> {
 
     private static final Logger LOG = Logger.getLogger(IdCommand.class.getName());
 
@@ -36,14 +37,17 @@ public class IdCommand implements Runnable {
     CommandSpec spec;
 
     @Override
-    public void run() {
+    public Integer call() {
         if (id != null) {
             updatePom();
         } else if (Files.notExists(pomPath)) {
-            throw new IllegalStateException("No such file: " + pomPath);
+            spec.commandLine().getOut().println(Ansi.AUTO.string("@|bold,fg(red) No such file:|@ @|fg(red) " + pomPath + "|@"));
+            return 1;
         }
 
         spec.commandLine().getOut().println(readProjectId());
+
+        return 0;
     }
 
     String readProjectId() {
