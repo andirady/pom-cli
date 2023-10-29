@@ -44,7 +44,6 @@ class PlugCommandTest extends BaseTest {
         var expr = "/project/build/plugins/plugin[" + subexpr + "]";
         var matched = evalXpath(pomPath, expr);
 
-        System.err.print(java.nio.file.Files.readString(pomPath));
         assertSame(1, matched, "Nodes matched");
     }
 }

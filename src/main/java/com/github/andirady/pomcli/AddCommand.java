@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
-
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
@@ -179,19 +178,19 @@ public class AddCommand implements Runnable {
     }
 
 	Dependency ensureVersion(Dependency dep) {
-		if (dep.getVersion() != null) {
+		if (dep.getVersion() != null || parentPom == null || parentPom.getDependencyManagement() == null) {
             return dep;
         }
 
-        DependencyManagement dm = null;
-        Optional<Dependency> managed = null;
         if (
-            parentPom != null
-                && (dm = parentPom.getDependencyManagement()) != null
-                && (managed = dm.getDependencies().stream().filter(d -> sameArtifact(d, dep, true)).findFirst()).isPresent()
+            parentPom.getDependencyManagement().getDependencies()
+                    .stream()
+                    .filter(d -> sameArtifact(d, dep, true))
+                    .findFirst()
+                    .orElse(null) instanceof Dependency managed
         ) {
             if (dep.getGroupId() == null) {
-                dep.setGroupId(managed.get().getGroupId());
+                dep.setGroupId(managed.getGroupId());
             }
             return dep;
         }
