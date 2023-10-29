@@ -167,6 +167,20 @@ pom search --full-class org.apache.logging.log4j.Logger
 pom search -fc org.apache.logging.log4j.Logger
 ```
 
+### Add plugin
+
+```console
+$ # Add using full coordinate
+$ pom plug com.example:hello-maven-plugin:1.0.0
+Plugin [com.example:hello-maven-plugin] added
+$ # Auto resolve latest version
+$ pom plug org.graalvm.buildtools:native-maven-plugin
+Plugin [org.graalvm.buildtools:native-maven-plugin] added
+$ # Add built-in plugin and auto resolve the latest version
+$ pom plug maven-resources-plugin
+Plugin [org.apache.maven.plugins:maven-resources-plugin] added
+```
+
 ## Building 
 
 This project requires Java 17+, Graal 22.1+ and Maven 3.8.4+.
