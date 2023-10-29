@@ -4,8 +4,9 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.andirady.pomcli</groupId>
   <artifactId>pomcli</artifactId>
-  <version>0.9.0</version>
+  <version>${revision}</version>
   <properties>
+    <revision>0.9.1-SNAPSHOT</revision>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
@@ -13,6 +14,10 @@
     <jackson.version>2.14.1</jackson.version>
     <junit.version>5.9.3</junit.version>
   </properties>
+  <scm>
+    <url>https://github.com/andirady/pom-cli.git</url>
+    <developerConnection>scm:git:git@github.com:andirady/pom-cli.git</developerConnection>
+  </scm>
   <dependencies>
     <dependency>
       <groupId>info.picocli</groupId>
@@ -128,7 +133,7 @@
               </execution>
             </executions>
             <configuration>
-              <imageName>pom</imageName>
+              <imageName>pom-${version}</imageName>
               <mainClass>${exec.mainClass}</mainClass>
             </configuration>
           </plugin>

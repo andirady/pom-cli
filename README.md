@@ -183,7 +183,7 @@ Plugin [org.apache.maven.plugins:maven-resources-plugin] added
 
 ## Building 
 
-This project requires Java 17+, Graal 22.1+ and Maven 3.8.4+.
+This project requires Java 21+, GraalVM CE and Maven 3.8.4+.
 You can use [sdkman](https://sdkman.io/) to download them.
 
 To build, run
