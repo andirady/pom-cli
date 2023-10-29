@@ -1,7 +1,6 @@
 package com.github.andirady.pomcli;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,10 +9,6 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +16,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.w3c.dom.NodeList;
 
 import picocli.CommandLine;
 
@@ -40,19 +34,6 @@ class AddCommandTest extends BaseTest {
     @AfterEach
     void cleanUp() {
         deleteRecursive(tempDir);
-    }
-
-    private int evalXpath(Path pomPath, String expr) {
-        try (var is = Files.newInputStream(pomPath)) {
-            var dbf = DocumentBuilderFactory.newInstance();
-            var db = dbf.newDocumentBuilder();
-            var doc = db.parse(is);
-            var xpath = XPathFactory.newInstance().newXPath();
-
-            return ((NodeList) xpath.evaluate(expr, doc, XPathConstants.NODESET)).getLength();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     static Stream<Arguments> addToScope() {

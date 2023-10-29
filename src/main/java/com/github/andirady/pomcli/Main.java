@@ -16,7 +16,7 @@ import picocli.CommandLine.TypeConversionException;
 @Command(
     name = "pom",
     subcommandsRepeatable = true,
-    subcommands = {IdCommand.class, AddCommand.class, SearchCommand.class, SetCommand.class}
+    subcommands = {IdCommand.class, AddCommand.class, SearchCommand.class, SetCommand.class, PlugCommand.class}
 )
 public class Main {
 

@@ -7,8 +7,13 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.w3c.dom.NodeList;
 
 class BaseTest {
 
@@ -37,6 +42,19 @@ class BaseTest {
             return Files.createTempDirectory(TEST_PROJECTS_PATH, "tmp");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    int evalXpath(Path pomPath, String expr) {
+        try (var is = Files.newInputStream(pomPath)) {
+            var dbf = DocumentBuilderFactory.newInstance();
+            var db = dbf.newDocumentBuilder();
+            var doc = db.parse(is);
+            var xpath = XPathFactory.newInstance().newXPath();
+
+            return ((NodeList) xpath.evaluate(expr, doc, XPathConstants.NODESET)).getLength();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
