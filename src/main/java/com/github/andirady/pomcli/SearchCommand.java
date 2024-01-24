@@ -4,7 +4,6 @@ import static java.util.stream.Collectors.joining;
 
 import java.util.Comparator;
 
-import com.github.andirady.pomcli.solrsearch.SolrSearch;
 import com.github.andirady.pomcli.solrsearch.SolrSearchRequest;
 import com.github.andirady.pomcli.solrsearch.SolrSearchResult.Document;
 
@@ -61,8 +60,9 @@ public class SearchCommand implements Runnable {
             var resp = solr.search(req).response();
             var docs = resp.docs();
 
+            var out = spec.commandLine().getOut();
             if (remaining == -1) {
-                spec.commandLine().getOut().printf("Found %d%n", resp.numFound());
+                out.printf("Found %d%n", resp.numFound());
                 remaining = resp.numFound();
             }
 
@@ -72,7 +72,7 @@ public class SearchCommand implements Runnable {
                     stream = stream.sorted(Comparator.comparingLong(Document::timestamp).reversed());
                 }
 
-                spec.commandLine().getOut().print(
+                out.printf("%s", 
                         stream.skip(i * 20)
                               .limit(20)
                               .map(d -> format(d))
@@ -89,7 +89,7 @@ public class SearchCommand implements Runnable {
                 }
 
                 System.console().readLine("\r");
-                spec.commandLine().getOut().print("\r");
+                out.printf("\r");
             }
         }
     }
