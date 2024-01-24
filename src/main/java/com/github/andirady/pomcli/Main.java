@@ -137,7 +137,7 @@ public class Main {
             throw new TypeConversionException("File not found: " + path);
         }
 
-        var pomReader = new DefaultModelReader();
+        var pomReader = new DefaultModelReader(null);
         try (var is = Files.newInputStream(path)) {
             var pom = pomReader.read(is, null);
             var d = new Dependency();

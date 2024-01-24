@@ -51,7 +51,7 @@ public class IdCommand implements Callable<Integer> {
     }
 
     String readProjectId() {
-        var pomReader = new DefaultModelReader();
+        var pomReader = new DefaultModelReader(null);
         Model pom;
         try (var is = Files.newInputStream(pomPath)) {
             pom = pomReader.read(is, null);
@@ -75,7 +75,7 @@ public class IdCommand implements Callable<Integer> {
 
     private void updatePom() {
         Model pom;
-        var reader = new DefaultModelReader();
+        var reader = new DefaultModelReader(null);
         if (Files.exists(pomPath)) {
             LOG.fine(() -> "Reading existing pom at " + pomPath);
             try (var is = Files.newInputStream(pomPath)) {

@@ -39,7 +39,7 @@ public class PlugCommand implements Callable<Integer> {
 
 	@Override
 	public Integer call() throws Exception {
-        var reader = new DefaultModelReader();
+        var reader = new DefaultModelReader(null);
         if (Files.exists(pomPath)) {
             try (var is = Files.newInputStream(pomPath)) {
                 model = reader.read(is, null);

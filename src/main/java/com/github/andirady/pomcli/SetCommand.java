@@ -38,7 +38,7 @@ public class SetCommand implements Runnable {
             throw new IllegalStateException(pomPath + " is not a file.");
         }
 
-        var reader = new DefaultModelReader();
+        var reader = new DefaultModelReader(null);
         Model pom;
         try (var is = Files.newInputStream(pomPath)) {
             pom = reader.read(is, null);

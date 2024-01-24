@@ -23,7 +23,7 @@ public class NewPom {
         model.setModelVersion("4.0.0");
         ParentPom parentPom = null;
         if (!standalone) {
-            parentPom = findParentPom(pomPath, new DefaultModelReader());
+            parentPom = findParentPom(pomPath, new DefaultModelReader(null));
         }
 
         if (parentPom != null) {
