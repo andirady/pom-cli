@@ -13,24 +13,21 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.TypeConversionException;
 
-@Command(
-    name = "pom",
-    subcommandsRepeatable = true,
-    subcommands = {IdCommand.class, AddCommand.class, SearchCommand.class, SetCommand.class, PlugCommand.class}
-)
+@Command(name = "pom", subcommandsRepeatable = true, subcommands = { IdCommand.class, AddCommand.class,
+        SearchCommand.class, SetCommand.class, PlugCommand.class })
 public class Main {
 
-	public static void main(String[] args) {
-		var cli = createCommandLine(new Main());
+    public static void main(String[] args) {
+        var cli = createCommandLine(new Main());
         try (var out = new PrintWriter(System.out, true)) {
             cli.setOut(out);
 
             System.exit(cli.execute(args));
         }
-	}
+    }
 
     static CommandLine createCommandLine(Main app) {
-		var cli = new CommandLine(app);
+        var cli = new CommandLine(app);
         cli.setExecutionExceptionHandler((e, cmd, parseResult) -> {
             var msg = e.getMessage();
             if (msg == null) {
@@ -43,8 +40,8 @@ public class Main {
                     ? cmd.getExitCodeExceptionMapper().getExitCode(e)
                     : cmd.getCommandSpec().exitCodeOnExecutionException();
         });
-		cli.registerConverter(QuerySpec.class, Main::stringToQuerySpec);
-		cli.registerConverter(Dependency.class, Main::stringToDependency);
+        cli.registerConverter(QuerySpec.class, Main::stringToQuerySpec);
+        cli.registerConverter(Dependency.class, Main::stringToDependency);
 
         return cli;
     }
@@ -63,16 +60,16 @@ public class Main {
         rootLogger.addHandler(consoleHandler);
     }
 
-	static QuerySpec stringToQuerySpec(String s) {
-		var qs = QuerySpec.of(s);
-		if (qs.groupId() == null) {
-			throw new TypeConversionException("Invalid format: missing groupId for '" + s + "'");
-		}
+    static QuerySpec stringToQuerySpec(String s) {
+        var qs = QuerySpec.of(s);
+        if (qs.groupId() == null) {
+            throw new TypeConversionException("Invalid format: missing groupId for '" + s + "'");
+        }
 
-		return qs;
-	}
+        return qs;
+    }
 
-	static Dependency stringToDependency(String s) {
+    static Dependency stringToDependency(String s) {
         var path = Path.of(s);
         if (Files.isRegularFile(path)) {
             var filename = path.getFileName().toString();
@@ -86,10 +83,10 @@ public class Main {
         }
 
         var d = new Dependency();
-		var parts = s.split(":");
-		if (parts.length < 2) {
+        var parts = s.split(":");
+        if (parts.length < 2) {
             d.setArtifactId(parts[0]);
-		} else {
+        } else {
             d.setGroupId(parts[0]);
             d.setArtifactId(parts[1]);
             if (parts.length >= 3) {
@@ -97,9 +94,9 @@ public class Main {
             }
         }
 
-		return d;
-	}
-    
+        return d;
+    }
+
     private static Dependency readCoordFromJarFile(Path path) {
         try {
             var uri = URI.create("jar:" + path.toRealPath().toAbsolutePath().toUri());
