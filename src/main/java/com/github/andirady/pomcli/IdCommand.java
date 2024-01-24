@@ -41,7 +41,8 @@ public class IdCommand implements Callable<Integer> {
         if (id != null) {
             updatePom();
         } else if (Files.notExists(pomPath)) {
-            spec.commandLine().getOut().println(Ansi.AUTO.string("@|bold,fg(red) No such file:|@ @|fg(red) " + pomPath + "|@"));
+            spec.commandLine().getOut()
+                    .println(Ansi.AUTO.string("@|bold,fg(red) No such file:|@ @|fg(red) " + pomPath + "|@"));
             return 1;
         }
 
@@ -104,7 +105,7 @@ public class IdCommand implements Callable<Integer> {
 
     private void parseId(String id, Model pom) {
         var parts = id.split(":", 3);
-        
+
         if (parts.length >= 2) {
             pom.setGroupId(parts[0]);
             pom.setArtifactId(parts[1]);
