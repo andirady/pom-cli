@@ -21,7 +21,12 @@ import picocli.CommandLine.TypeConversionException;
 public class Main {
 
 	public static void main(String[] args) {
-		System.exit(createCommandLine(new Main()).execute(args));
+		var cli = createCommandLine(new Main());
+        try (var out = new PrintWriter(System.out, true)) {
+            cli.setOut(out);
+
+            System.exit(cli.execute(args));
+        }
 	}
 
     static CommandLine createCommandLine(Main app) {
