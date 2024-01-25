@@ -57,10 +57,10 @@ class SearchCommandTest {
 
         var expected = """
                 Found 4
-                g:a:4                                                                                                    \033[32m      a day ago\033[0m
-                g:a:3                                                                                                    \033[32m     3 days ago\033[0m
-                g:a:2                                                                                                    \033[33m    3 years ago\033[0m
-                g:a:1                                                                                                    \033[90m    6 years ago\033[0m""";
+                g:a:4                                                                                                          a day ago
+                g:a:3                                                                                                         3 days ago
+                g:a:2                                                                                                        3 years ago
+                g:a:1                                                                                                        6 years ago""";
         var actual = out.toString();
 
         assertEquals(expected, actual);
