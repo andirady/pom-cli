@@ -12,6 +12,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 
 @Command(name = "search")
@@ -54,19 +55,19 @@ public class SearchCommand implements Runnable {
         int start = 0;
         int remaining = -1;
         var loop = true;
+        var out = spec.commandLine().getOut();
 
         while (loop) {
             var req = new SolrSearchRequest(term, core, null, start, 40);
             var resp = solr.search(req).response();
             var docs = resp.docs();
 
-            var out = spec.commandLine().getOut();
             if (remaining == -1) {
                 out.printf("Found %d%n", resp.numFound());
                 remaining = resp.numFound();
             }
 
-            for (var i = 0; i < 2; i++) {
+            for (var i = 0; i < 2; i++) { // print 20 at a time.
                 var stream = docs.stream();
                 if (sort) {
                     stream = stream.sorted(Comparator.comparingLong(Document::timestamp).reversed());
@@ -88,7 +89,11 @@ public class SearchCommand implements Runnable {
                     break;
                 }
 
-                System.console().readLine("\r");
+                var console = System.console();
+                if (console != null) { // console can be null
+                    console.readLine("\r");
+                }
+
                 out.printf("\r");
             }
         }
@@ -98,15 +103,16 @@ public class SearchCommand implements Runnable {
         var age = new Age(doc.timestamp());
         var ageText = age.toString();
         var years = age.asPeriod().getYears();
-        int col = 32;
+        int col = 34;
         if (years > 5) {
-            col = 90;
+            col = 238;
         } else if (years > 2) {
-            col = 33;
+            col = 178;
         }
 
-        return String.format("%-104s \033[" + col + "m%15s\033[0m",
+        var result = String.format("%-104s @|fg(" + col + ") %15s|@",
                              doc.id(),
                              ageText);
+        return Ansi.AUTO.string(result);
     }
 }
