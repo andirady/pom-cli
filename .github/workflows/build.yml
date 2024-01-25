@@ -3,7 +3,11 @@
 
 name: CI
 
-on: [push]
+on:
+  push:
+    paths:
+      - '**.java'
+      - 'pom.xml'
 
 jobs:
   build:
