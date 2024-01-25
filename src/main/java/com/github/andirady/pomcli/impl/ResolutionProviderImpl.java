@@ -3,9 +3,11 @@ package com.github.andirady.pomcli.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -41,12 +43,48 @@ public class ResolutionProviderImpl implements ResolutionProvider {
 
     private RepositorySystem repoSystem;
 
+    private List<RemoteRepository> repositories;
+
+    private File localRepoDirectory;
+
     public ResolutionProviderImpl() {
         this.repoSystem = ServiceLoader.load(RepositorySystemSupplier.class).findFirst().orElseThrow().get();
+        this.repositories = List.of(
+                new RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/").build());
+        this.localRepoDirectory = Path.of(System.getProperty("user.home"), ".m2", "repository").toFile();
     }
 
     @Override
-    public Optional<Dependency> findByArtifactId(Model model, String artifactId, String scope) {
+    public Model readModel(String groupId, String artifactId, String version) {
+        var system = ServiceLoader.load(RepositorySystemSupplier.class).findFirst()
+                .orElseThrow(() -> new NoSuchElementException(
+                        "No provider for " + RepositorySystemSupplier.class.getName()))
+                .get();
+        var artifact = new DefaultArtifact(groupId, artifactId, null, "pom", version);
+        var sessionBuilder = new SessionBuilderSupplier(system).get()
+                .withLocalRepositoryBaseDirectories(
+                        localRepoDirectory);
+        try (
+                var session = sessionBuilder.build()) {
+            var artifactRequest = new ArtifactRequest(artifact, repositories, null);
+            var artifactResult = system.resolveArtifact(session, artifactRequest);
+            var path = artifactResult.getArtifact().getFile().toPath();
+
+            var reader = new DefaultModelReader(null);
+            try (var is = Files.newInputStream(path)) {
+                return reader.read(is, Map.of());
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Override
+    public Optional<Dependency> findByArtifactId(Model model, String groupId, String artifactId, String scope) {
+        Objects.requireNonNull(model, "model is required");
+        Objects.requireNonNull(artifactId, "artifactId is required");
+        Objects.requireNonNull(scope, "scope is required");
+
         var props = model.getProperties().entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
         var parent = model.getParent();
@@ -55,13 +93,9 @@ public class ResolutionProviderImpl implements ResolutionProvider {
                 model.getArtifactId(), null, model.getPackaging(),
                 model.getVersion() instanceof String s ? s : Objects.requireNonNull(parent).getVersion(), props,
                 (File) null);
-        System.out.println(artifact);
-        var repositories = List.of(
-                new RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/").build());
-
         var results = new CopyOnWriteArrayList<Dependency>();
-        var sessionBuilder = new SessionBuilderSupplier(repoSystem).get().withLocalRepositoryBaseDirectories(
-                Path.of(System.getProperty("user.home"), ".m2", "repository").toFile());
+        var sessionBuilder = new SessionBuilderSupplier(repoSystem).get()
+                .withLocalRepositoryBaseDirectories(localRepoDirectory);
         try (var session = sessionBuilder.build()) {
             sessionBuilder.setRepositoryListener(
                     new ChainedRepositoryListener(session.getRepositoryListener(), new AbstractRepositoryListener() {

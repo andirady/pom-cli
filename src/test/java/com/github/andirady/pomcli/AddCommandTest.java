@@ -309,7 +309,127 @@ class AddCommandTest extends BaseTest {
 
     @ParameterizedTest
     @MethodSource
-    void parentManaged(Function<Path, Path> pomPathCreator) throws IOException {
+    void addManagedFailOnDuplicate(Function<Path, Path> pomPathCreator) throws IOException {
+        var pomPath = pomPathCreator.apply(tempDir);
+        var ec = underTest.execute("add", "-d", "-f", pomPath.toString(), "jackson-databind");
+        assertSame(1, ec);
+    }
+
+    static Stream<Function<Path, Path>> addManagedFailOnDuplicate() {
+        return Stream.of((tempDir) -> {
+            var parentPomPath = tempDir.resolve("pom.xml");
+            var childDir = tempDir.resolve("api");
+
+            try {
+                Files.writeString(parentPomPath, """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>g</groupId>
+                            <artifactId>a</artifactId>
+                            <version>1</version>
+                            <packaging>pom</packaging>
+                            <dependencyManagement>
+                                <dependencies>
+                                    <dependency>
+                                        <groupId>com.fasterxml.jackson.core</groupId>
+                                        <artifactId>jackson-databind</artifactId>
+                                        <version>2.14.0</version>
+                                    </dependency>
+                                </dependencies>
+                            </dependencyManagement>
+                            <modules>
+                                <module>api</module>
+                            </modules>
+                        </project>
+                        """);
+
+                Files.createDirectory(childDir);
+                var pomPath = childDir.resolve("pom.xml");
+
+                Files.writeString(pomPath, """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <parent>
+                                <groupId>g</groupId>
+                                <artifactId>a</artifactId>
+                                <version>1</version>
+                                <relativePath>..</relativePath>
+                            </parent>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-databind</artifactId>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """);
+                return pomPath;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }, (tempDir) -> {
+            var pomPath = tempDir.resolve("pom.xml");
+            try {
+                Files.writeString(pomPath, """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <parent>
+                                <groupId>org.springframework.boot</groupId>
+                                <artifactId>spring-boot-starter-parent</artifactId>
+                                <version>3.1.0</version>
+                            </parent>
+                            <artifactId>a</artifactId>
+                            <version>1</version>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-databind</artifactId>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """);
+                return pomPath;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }, (tempDir) -> {
+            var pomPath = tempDir.resolve("pom.xml");
+            try {
+                Files.writeString(pomPath, """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>g</groupId>
+                            <artifactId>a</artifactId>
+                            <version>1</version>
+                            <dependencyManagement>
+                                <dependencies>
+                                    <dependency>
+                                        <groupId>org.springframework.boot</groupId>
+                                        <artifactId>spring-boot-dependencies</artifactId>
+                                        <version>3.1.0</version>
+                                        <type>pom</type>
+                                        <scope>import</scope>
+                                    </dependency>
+                                </dependencies>
+                            </dependencyManagement>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-databind</artifactId>
+                                </dependency>
+                            </dependencies>
+                        </project>
+                        """);
+                return pomPath;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void addManaged(Function<Path, Path> pomPathCreator) throws IOException {
         var pomPath = pomPathCreator.apply(tempDir);
         var ec = underTest.execute("add", "-f", pomPath.toString(), "jackson-databind");
         assertSame(0, ec);
@@ -319,7 +439,7 @@ class AddCommandTest extends BaseTest {
         assertSame(1, matched, "Nodes matching");
     }
 
-    static Stream<Function<Path, Path>> parentManaged() {
+    static Stream<Function<Path, Path>> addManaged() {
         return Stream.of((tempDir) -> {
             var parentPomPath = tempDir.resolve("pom.xml");
             var childDir = tempDir.resolve("api");
@@ -378,6 +498,32 @@ class AddCommandTest extends BaseTest {
                             </parent>
                             <artifactId>a</artifactId>
                             <version>1</version>
+                        </project>
+                        """);
+                return pomPath;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }, (tempDir) -> {
+            var pomPath = tempDir.resolve("pom.xml");
+            try {
+                Files.writeString(pomPath, """
+                        <project>
+                            <modelVersion>4.0.0</modelVersion>
+                            <groupId>g</groupId>
+                            <artifactId>a</artifactId>
+                            <version>1</version>
+                            <dependencyManagement>
+                                <dependencies>
+                                    <dependency>
+                                        <groupId>org.springframework.boot</groupId>
+                                        <artifactId>spring-boot-dependencies</artifactId>
+                                        <version>3.1.0</version>
+                                        <type>pom</type>
+                                        <scope>import</scope>
+                                    </dependency>
+                                </dependencies>
+                            </dependencyManagement>
                         </project>
                         """);
                 return pomPath;

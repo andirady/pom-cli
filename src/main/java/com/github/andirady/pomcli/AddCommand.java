@@ -8,11 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
@@ -20,11 +19,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
 import org.apache.maven.model.io.ModelReader;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.supplier.RepositorySystemSupplier;
-import org.eclipse.aether.supplier.SessionBuilderSupplier;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -104,15 +98,19 @@ public class AddCommand implements Runnable {
         readParentPom(reader);
 
         var existing = getExistingDependencies();
+        LOG.fine("Checking for duplicates");
         var duplicates = coords.stream()
-                .filter(c -> existing.stream().anyMatch(d -> sameArtifact(c, d, false)))
+                .filter(c -> existing.stream().anyMatch(d -> sameArtifact(c, d, c.getGroupId() == null)))
                 .map(this::coordString)
                 .collect(joining(", "));
         if (duplicates.length() > 0) {
+            LOG.fine(() -> String.format("Found %s duplicates", duplicates.length()));
             throw new IllegalArgumentException("Duplicate artifact(s): " + duplicates);
         }
 
         var stream = coords.stream().parallel().map(this::ensureVersion);
+
+        // Add the scope element if the scope is not compile scope.
         if (scope != null && !scope.compile) {
             stream = stream.map(d -> {
                 d.setScope(scope.value());
@@ -160,26 +158,9 @@ public class AddCommand implements Runnable {
 
         // If the parent pom doesn't exists, tread the parent as remote parent.
         if (!Files.exists(parentPomPath)) {
-            var system = ServiceLoader.load(RepositorySystemSupplier.class).findFirst()
-                    .orElseThrow(() -> new NoSuchElementException("No provider for " + RepositorySystemSupplier.class.getName()))
-                    .get();
-            var artifact = new DefaultArtifact(parent.getGroupId(), parent.getArtifactId(), null, "pom",
-                    parent.getVersion());
-            List<RemoteRepository> repositories = List
-                    .of(new RemoteRepository.Builder("central", "default", "https://repo.maven.apache.org/maven2/")
-                            .build());
-            var sessionBuilder = new SessionBuilderSupplier(system).get()
-                    .withLocalRepositoryBaseDirectories(
-                            Path.of(System.getProperty("user.home"), ".m2", "repository").toFile());
-            try (
-                var session = sessionBuilder.build()
-            ) {
-                var artifactRequest = new ArtifactRequest(artifact, repositories, null);
-                var artifactResult = system.resolveArtifact(session, artifactRequest);
-                parentPomPath = artifactResult.getArtifact().getFile().toPath();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
+            LOG.fine("Resolving the parent pom since the relative path does not exists");
+            parentPom = ResolutionProvider.getInstance().readModel(parent.getGroupId(), parent.getArtifactId(), parent.getVersion());
+            return;
         }
 
         try (var is = Files.newInputStream(parentPomPath)) {
@@ -209,9 +190,22 @@ public class AddCommand implements Runnable {
             return dep;
         }
 
+        var scopeName = scope instanceof Scope s ? s.value() : "compile";
+        var resolver = ResolutionProvider.getInstance();
+
+        if (streamManaged(model)
+                .filter(this::isImportScope)
+                .map(d -> resolver.readModel(d.getGroupId(), d.getArtifactId(), d.getVersion()))
+                .flatMap(m -> resolver.findByArtifactId(m, dep.getGroupId(), dep.getArtifactId(), scopeName).stream())
+                .findFirst().orElse(null) instanceof Dependency managed) {
+            if (dep.getGroupId() == null) {
+                dep.setGroupId(managed.getGroupId());
+            }
+            return dep;
+        }
+
         if (parentPom != null) {
-            if (parentPom.getDependencyManagement() instanceof DependencyManagement dm && dm.getDependencies()
-                    .stream()
+            if (streamManaged(parentPom)
                     .filter(d -> sameArtifact(d, dep, true))
                     .findFirst()
                     .orElse(null) instanceof Dependency managed) {
@@ -221,18 +215,13 @@ public class AddCommand implements Runnable {
                 return dep;
             }
 
-            var remotelyManaged = ServiceLoader.load(ResolutionProvider.class)
-                    .findFirst()
-                    .orElseThrow(() -> new NoSuchElementException("No provider for " + ResolutionProvider.class.getName()))
-                    .findByArtifactId(parentPom, dep.getArtifactId(), scope instanceof Scope s ? s.value() : "compile")
+            var remotelyManaged = resolver.findByArtifactId(parentPom, dep.getGroupId(), dep.getArtifactId(), scopeName)
                     .orElse(null);
             if (remotelyManaged != null) {
-                // Immediately return if the groupId already set.
-                if (dep.getGroupId() instanceof String s && s.equals(remotelyManaged.getGroupId())) {
-                    return dep;
+                if (dep.getGroupId() == null) {
+                    dep.setGroupId(remotelyManaged.getGroupId());
                 }
 
-                dep.setGroupId(remotelyManaged.getGroupId());
                 return dep;
             }
         }
@@ -246,12 +235,23 @@ public class AddCommand implements Runnable {
         return dep;
     }
 
+    Stream<Dependency> streamManaged(Model model) {
+        return model.getDependencyManagement() instanceof DependencyManagement dm
+                ? dm.getDependencies().stream()
+                : Stream.empty();
+    }
+
     boolean sameArtifact(Dependency d1, Dependency d2, boolean ignoreGroupId) {
+        LOG.fine(() -> String.format("Comparing %s with %s", d1, d2));
         if (!ignoreGroupId && !Objects.equals(d1.getGroupId(), d2.getGroupId())) {
             return false;
         }
 
         return d1.getArtifactId().equals(d2.getArtifactId()) && Objects.equals(d1.getClassifier(), d2.getClassifier());
+    }
+
+    boolean isImportScope(Dependency dependency) {
+        return "pom".equals(dependency.getType()) && "import".equals(dependency.getScope());
     }
 
     String coordString(Dependency d) {
