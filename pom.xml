@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.andirady.pomcli</groupId>
   <artifactId>pomcli</artifactId>
-  <version>0.9.2-SNAPSHOT</version>
+  <version>${revision}</version>
   <scm>
     <developerConnection>scm:git:git@github.com:andirady/pom-cli.git</developerConnection>
     <url>https://github.com/andirady/pom-cli.git</url>
@@ -15,7 +15,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>5.9.3</junit.version>
     <jackson.version>2.14.1</jackson.version>
-    <revision>0.9.1-SNAPSHOT</revision>
+    <revision>0.9.2</revision>
   </properties>
   <dependencies>
     <dependency>
