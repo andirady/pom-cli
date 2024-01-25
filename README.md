@@ -139,6 +139,9 @@ would results in the target ``pom.xml`` to contain the following:
   </dependencies>
 ```
 
+You can also add by just specifying the artifact ID if the artifact is managed by either in the `dependencyManagement`, dependency with `import` scope,
+or managed by the parent.
+
 ### Setting properties
 
 ```bash
