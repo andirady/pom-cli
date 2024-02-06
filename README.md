@@ -142,6 +142,21 @@ would results in the target ``pom.xml`` to contain the following:
 You can also add by just specifying the artifact ID if the artifact is managed by either in the `dependencyManagement`, dependency with `import` scope,
 or managed by the parent.
 
+### Removing dependencies
+
+Dependencies can be removed from the `pom.xml` using the `remove` command.
+
+```bash
+# Remove by spefifying the groupId and artifactId
+pom remove groupId:artifactId
+
+# Remove by specifying the artifactId
+pom remove artifactId
+
+# Use the shorter alias, rm
+pom rm artifactId
+```
+
 ### Setting properties
 
 ```bash

@@ -59,6 +59,12 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
+  "name":"com.github.andirady.pomcli.RemoveCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.github.andirady.pomcli.solrsearch.SolrSearchRequest",
   "methods":[
     {"name":"<init>","parameterTypes":["java.lang.String","java.lang.String","java.lang.String","int","int"] }, 
