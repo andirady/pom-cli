@@ -200,9 +200,6 @@ $ pom -Pnative plug org.graalvm.buildtools:native-maven-plugin
 $ # Add built-in plugin and auto resolve the latest version
 $ pom plug maven-resources-plugin
 🔌 org.apache.maven.plugins:maven-resources-plugin:1.0.0 plugged
-$ # Add plugin managed by parent
-$ pom plug spring-boot-maven-plugin
-🔌 org.springframework.boot:spring-boot-maven-plugin:1.0.0 plugged
 ```
 
 ## Building 
