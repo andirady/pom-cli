@@ -1,12 +1,22 @@
 package com.github.andirady.pomcli;
 
-import java.io.*;
-import java.net.*;
-import java.nio.file.*;
-import java.util.*;
-import java.util.logging.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.io.DefaultModelReader;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -14,11 +24,16 @@ import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.TypeConversionException;
 
 @Command(name = "pom", subcommandsRepeatable = true, subcommands = { IdCommand.class, AddCommand.class,
-        SearchCommand.class, SetCommand.class, PlugCommand.class, RemoveCommand.class })
+        SearchCommand.class, SetCommand.class, PlugCommand.class, RemoveCommand.class, SetParentCommand.class })
 public class Main {
 
     public static void main(String[] args) {
-        var cli = createCommandLine(new Main());
+        var main = new Main();
+        if ("true".equals(System.getProperty("debug"))) {
+            main.setDebug(true);
+        }
+
+        var cli = createCommandLine(main);
         try (var out = new PrintWriter(System.out, true)) {
             cli.setOut(out);
 

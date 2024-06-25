@@ -1,13 +1,12 @@
 package com.github.andirady.pomcli;
 
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.StringJoiner;
 
 public record QuerySpec(String groupId, String artifactId, String version) {
 
-	static QuerySpec of(String spec) {
+	public static QuerySpec of(String spec) {
 		var parts = spec.split(":");
 		return switch (parts.length) {
 			case 1 -> new QuerySpec(null, parts[0], null);
