@@ -59,10 +59,34 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
+  "name":"com.github.andirady.pomcli.SetParentCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.github.andirady.pomcli.RemoveCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
+  "name":"com.github.andirady.pomcli.converter.ParentConverter",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"convert","parameterTypes":["java.lang.String"] }
+  ]}
+,
+{
+  "name":"com.github.andirady.pomcli.converter.PluginConverter",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[
+      {"name":"<init>","parameterTypes":[] },
+      {"name":"convert","parameterTypes":["java.lang.String"] }
+  ]}
 ,
 {
   "name":"com.github.andirady.pomcli.solrsearch.SolrSearchRequest",
