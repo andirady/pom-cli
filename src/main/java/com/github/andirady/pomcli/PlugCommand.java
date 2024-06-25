@@ -1,30 +1,21 @@
 package com.github.andirady.pomcli;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
-import org.apache.maven.model.io.DefaultModelReader;
-import org.apache.maven.model.io.DefaultModelWriter;
 
 import com.github.andirady.pomcli.converter.PluginConverter;
 
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
-import picocli.CommandLine.Model.CommandSpec;
 
 @Command(name = "plug")
-public class PlugCommand implements Callable<Integer> {
-
-    private static final Logger LOG = Logger.getLogger("plug");
+public class PlugCommand extends ModifyingCommandBase {
 
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
     Path pomPath;
@@ -35,34 +26,20 @@ public class PlugCommand implements Callable<Integer> {
     @Spec
     CommandSpec spec;
 
-    private Model model;
+    @ParentCommand
+    Main main;
 
-	@Override
-	public Integer call() throws Exception {
-        var reader = new DefaultModelReader(null);
-        if (Files.exists(pomPath)) {
-            try (var is = Files.newInputStream(pomPath)) {
-                model = reader.read(is, null);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            LOG.fine(() -> pomPath + " does not exists. Creating a new one");
-            model = new NewPom().newPom(pomPath);
-        }
-
-        var added = new AddPlugin().addPlugin(model, plugin);
-
-        var writer = new DefaultModelWriter();
-		try (var os = Files.newOutputStream(pomPath)) {
-            writer.write(os, null, model);
-        } catch (FileNotFoundException e) {
-            spec.commandLine().getOut().println("No such file: " + pomPath);
-            return 1;
-        }
-
-        spec.commandLine().getOut().println(added + " added");
+    @Override
+    public int process(Model model) throws Exception {
+        var added = new AddPlugin(main.getProfileId().orElse(null)).addPlugin(model, plugin);
+        spec.commandLine().getOut().println("🔌 " + added.getId() + " plugged");
 
         return 0;
-	}
+    }
+
+    @Override
+    Path getPomPath() {
+        return pomPath;
+    }
+
 }

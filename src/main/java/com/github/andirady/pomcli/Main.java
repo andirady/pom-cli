@@ -8,6 +8,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -59,6 +60,17 @@ public class Main {
         cli.registerConverter(Dependency.class, Main::stringToDependency);
 
         return cli;
+    }
+
+    private String profileId;
+
+    @Option(names = { "-P", "--profile" }, scope = ScopeType.INHERIT)
+    public void setProfileId(String profileId) {
+        this.profileId = profileId;
+    }
+
+    public Optional<String> getProfileId() {
+        return Optional.ofNullable(profileId);
     }
 
     @Option(names = { "-d", "--debug" }, scope = ScopeType.INHERIT)

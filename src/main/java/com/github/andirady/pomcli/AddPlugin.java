@@ -1,13 +1,27 @@
 package com.github.andirady.pomcli;
 
 import org.apache.maven.model.Build;
+import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginContainer;
+import org.apache.maven.model.Profile;
 
 public class AddPlugin {
 
+    private final String profileId;
+
+    public AddPlugin() {
+        profileId = null;
+    }
+
+    public AddPlugin(String profileId) {
+        this.profileId = profileId;
+    }
+
     public Plugin addPlugin(Model model, String artifactId) {
         var plugin = new Plugin();
+        new Profile();
         plugin.setArtifactId(artifactId);
         return addPlugin(model, plugin);
     }
@@ -18,17 +32,43 @@ public class AddPlugin {
             plugin.setVersion(new GetLatestVersion().execute(query).orElseThrow());
         }
 
-        var build = model.getBuild();
-        if (build == null) {
-            build = new Build();
-            model.setBuild(build);
+        BuildBase build = switch (profileId) {
+            case String profileId -> {
+                var profile = model.getProfiles().stream().filter(p -> profileId.equals(p.getId())).findFirst()
+                        .orElseGet(() -> {
+                            var p = new Profile();
+                            p.setId(profileId);
+                            return p;
+                        });
+
+                if (profile.getBuild() instanceof BuildBase b) {
+                    yield b;
+                }
+
+                var b = new Build();
+                profile.setBuild(b);
+                model.addProfile(profile);
+                yield b;
+            }
+            case null -> {
+                var b = model.getBuild();
+                if (b == null) {
+                    b = new Build();
+                    model.setBuild(b);
+                }
+
+                yield b;
+            }
+        };
+
+        PluginContainer pluginContainer = "pom".equals(model.getPackaging()) ? build.getPluginManagement() : build;
+        var alreadyPlugged = pluginContainer.getPlugins().stream().filter(p -> p.getKey().equals(plugin.getKey()))
+                .findFirst().isPresent();
+        if (alreadyPlugged) {
+            throw new IllegalArgumentException("Plugin %s already plugged".formatted(plugin.getKey()));
         }
 
-        if ("pom".equals(model.getPackaging())) {
-            build.getPluginManagement().addPlugin(plugin);
-        } else {
-            build.addPlugin(plugin);
-        }
+        pluginContainer.addPlugin(plugin);
 
         return plugin;
     }

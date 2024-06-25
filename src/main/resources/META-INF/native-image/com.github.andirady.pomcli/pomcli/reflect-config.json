@@ -27,6 +27,12 @@
   "methods":[{"name":"setDebug","parameterTypes":["boolean"] }]}
 ,
 {
+  "name":"com.github.andirady.pomcli.PlugCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.github.andirady.pomcli.SearchCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,

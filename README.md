@@ -190,13 +190,19 @@ pom search -fc org.apache.logging.log4j.Logger
 ```console
 $ # Add using full coordinate
 $ pom plug com.example:hello-maven-plugin:1.0.0
-Plugin [com.example:hello-maven-plugin] added
+🔌 com.example:hello-maven-plugin:1.0.0 plugged
 $ # Auto resolve latest version
 $ pom plug org.graalvm.buildtools:native-maven-plugin
-Plugin [org.graalvm.buildtools:native-maven-plugin] added
+🔌 org.graalvm.buildtools:native-maven-plugin:1.0.0 plugged
+$ # Plug to profile
+$ pom -Pnative plug org.graalvm.buildtools:native-maven-plugin
+🔌 org.graalvm.buildtools:native-maven-plugin:1.0.0 plugged
 $ # Add built-in plugin and auto resolve the latest version
 $ pom plug maven-resources-plugin
-Plugin [org.apache.maven.plugins:maven-resources-plugin] added
+🔌 org.apache.maven.plugins:maven-resources-plugin:1.0.0 plugged
+$ # Add plugin managed by parent
+$ pom plug spring-boot-maven-plugin
+🔌 org.springframework.boot:spring-boot-maven-plugin:1.0.0 plugged
 ```
 
 ## Building 
