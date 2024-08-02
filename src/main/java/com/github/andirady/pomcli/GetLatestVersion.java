@@ -1,20 +1,168 @@
 package com.github.andirady.pomcli;
 
-
-import com.github.andirady.pomcli.solrsearch.SolrSearch;
-import com.github.andirady.pomcli.solrsearch.SolrSearchRequest;
-import com.github.andirady.pomcli.solrsearch.SolrSearchResult;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
 
 public class GetLatestVersion {
 
-	public Optional<String> execute(QuerySpec spec) {
-		if (spec.groupId() == null || spec.artifactId() == null) {
-			throw new IllegalArgumentException("groupId and artifactId is required");
-		}
+    static final Logger LOG = Logger.getLogger("");
+    private static final URI MAVEN_CENTRAL = URI.create("https://repo.maven.apache.org/maven2");
 
-		var solrSearch = new SolrSearch();
-		var req = new SolrSearchRequest(spec.toString(), null, null, 0, 1);
-		return solrSearch.search(req).response().docs().stream().map(SolrSearchResult.Document::latestVersion).findFirst();
-	}
+    private final HttpClient client;
+
+    public GetLatestVersion(HttpClient client) {
+        this.client = client;
+    }
+
+    public GetLatestVersion() {
+        this(HttpClient.newBuilder().version(Version.HTTP_2).build());
+    }
+
+    public Optional<String> execute(QuerySpec spec) {
+        if (spec.groupId() == null || spec.artifactId() == null) {
+            throw new IllegalArgumentException("groupId and artifactId is required");
+        }
+
+        try {
+            var version = getLatest(MAVEN_CENTRAL, spec.groupId(), spec.artifactId(), true);
+            return Optional.ofNullable(version);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    String getLatest(URI repository, String groupId, String artifactId, boolean release) throws Exception {
+        var uri = new URI(repository.getScheme(),
+                repository.getAuthority(),
+                Path.of(repository.getPath())
+                        .resolve(Arrays.stream(groupId.split("\\.")).map(Path::of).reduce((a, b) -> a.resolve(b))
+                                .orElseThrow()
+                                .resolve(Path.of(artifactId, "maven-metadata.xml")))
+                        .toString(),
+                null, null);
+        LOG.fine(() -> "uri = " + uri);
+        var t0 = System.currentTimeMillis();
+        var request = HttpRequest.newBuilder(uri).GET().build();
+        var response = client.send(request, BodyHandlers.ofInputStream());
+
+        LOG.fine(() -> "Responsed in %sms".formatted(System.currentTimeMillis() - t0));
+
+        if (response.statusCode() != 200) {
+            LOG.fine(() -> "Status code from " + repository + " is not 200: " + response.statusCode());
+            return null;
+        }
+
+        var t1 = System.currentTimeMillis();
+        var factory = XMLInputFactory.newInstance();
+        try (var is = response.body(); var isr = new InputStreamReader(is)) {
+            var reader = factory.createXMLStreamReader(isr);
+            var inMetadata = false;
+            var inVersioning = false;
+            var inLatest = false;
+            var inRelease = false;
+            List<String> versions = null;
+            var inVersion = false;
+
+            while (reader.hasNext()) {
+                var event = reader.next();
+                switch (event) {
+                    case XMLStreamConstants.START_ELEMENT:
+                        switch (reader.getLocalName()) {
+                            case "metadata":
+                                inMetadata = true;
+                                break;
+                            case "versioning":
+                                if (!inMetadata) {
+                                    throw new IllegalStateException("Invalid metadata file");
+                                }
+                                inVersioning = true;
+                                break;
+                            case "latest":
+                                if (!inMetadata && !inVersioning) {
+                                    throw new IllegalStateException("Invalid metadata file");
+                                }
+
+                                inLatest = true;
+                                break;
+                            case "release":
+                                if (!inMetadata && !inVersioning) {
+                                    throw new IllegalStateException("Invalid metadata file");
+                                }
+
+                                inRelease = true;
+                                break;
+                            case "versions":
+                                versions = new ArrayList<>();
+                                break;
+                            case "version":
+                                if (versions == null) {
+                                    throw new IllegalStateException("Unexpected element <version>");
+                                }
+                                inVersion = true;
+                                break;
+                        }
+                        break;
+                    case XMLStreamConstants.CHARACTERS:
+                        var text = reader.getText();
+                        if (((release && inRelease) || (!release && inLatest))
+                                && followsRules(text)) {
+                            return text;
+                        } else if (inVersion) {
+                            versions.add(text);
+                        }
+
+                        break;
+                    case XMLStreamConstants.END_ELEMENT:
+                        switch (reader.getLocalName()) {
+                            case "latest":
+                                inLatest = false;
+                                break;
+                            case "release":
+                                inRelease = false;
+                                break;
+                            case "version":
+                                inVersion = false;
+                                break;
+                            case "versions":
+                                var version = versions.stream().sorted(Collections.reverseOrder())
+                                        .filter(this::followsRules)
+                                        .findFirst().orElse(null);
+                                // if none follow the rules, return the latest.
+                                return (version == null)
+                                        ? versions.stream().sorted(Collections.reverseOrder()).limit(1)
+                                                .findFirst().orElseThrow()
+                                        : version;
+                        }
+                        break;
+                }
+            }
+        } catch (XMLStreamException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            LOG.fine(() -> "Parsed in %sms".formatted(System.currentTimeMillis() - t1));
+        }
+
+        return null;
+    }
+
+    private boolean followsRules(String text) {
+        return Stream.of("-alpha", "-beta", "-rc").noneMatch(text::contains);
+    }
+
 }
