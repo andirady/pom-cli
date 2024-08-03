@@ -170,6 +170,16 @@ pom set maven.compiler.source=17 maven.compiler.source=17
 pom set maven.compiler.{source,target}=17
 ```
 
+### Reading properties
+
+```bash
+# Get property from default profile
+pom get maven.compiler.source
+
+# Set property from specific profile
+pom -P test get maven.compiler.source
+```
+
 ### Search
 
 ```bash
