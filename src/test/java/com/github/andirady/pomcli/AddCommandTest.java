@@ -1,5 +1,7 @@
 package com.github.andirady.pomcli;
 
+import static java.nio.file.Files.createDirectory;
+import static java.nio.file.Files.writeString;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.IOException;
@@ -16,8 +18,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import picocli.CommandLine;
 
@@ -38,48 +41,38 @@ class AddCommandTest extends BaseTest {
         deleteRecursive(tempDir);
     }
 
-    static Stream<Arguments> addToScope() {
-        return Stream.of(
-                Arguments.of(null,
-                        "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and not(scope)]"),
-                Arguments.of("--compile",
-                        "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and not(scope)]"),
-                Arguments.of("--test",
-                        "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='test']"),
-                Arguments.of("--provided",
-                        "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='provided']"),
-                Arguments.of("--runtime",
-                        "/project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='runtime']"),
-                Arguments.of("--import",
-                        "/project/dependencyManagement/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='import']"));
-    }
-
     @ParameterizedTest
-    @MethodSource
+    @CsvSource(delimiter = '|', textBlock = """
+                       | /project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and not(scope)]
+            --compile  | /project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and not(scope)]
+            --test     | /project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='test']
+            --provided | /project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='provided']
+            --runtime  | /project/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='runtime']
+            --import   | /project/dependencyManagement/dependencies/dependency[groupId='g' and artifactId='a' and version=1 and scope='import']
+            """)
     void addToScope(String scope, String xpathExpr) throws Exception {
         var pomPath = tempDir.resolve("pom.xml");
-
         var gav = "g:a:1";
+
         var ec = scope == null
                 ? underTest.execute("add", "-f", pomPath.toString(), gav)
                 : underTest.execute("add", scope, "-f", pomPath.toString(), gav);
 
         assertSame(0, ec);
-        assertSame(1, evalXpath(pomPath, xpathExpr), "Nodes matching xpath for scope " + scope);
+        assertXpath(pomPath, xpathExpr, 1, "Nodes matching xpath for scope " + scope);
     }
 
     @Test
     void failIfDuplicateSingle() throws Exception {
-        var pomPath = tempDir.resolve("pom.xml");
-        Files.writeString(pomPath, """
+        var pomPath = writeString(tempDir.resolve("pom.xml"), """
                 <project>
-                    <dependencies>
-                        <dependency>
-                            <groupId>g</groupId>
-                            <artifactId>a</artifactId>
-                            <version>1</version>
-                        </dependency>
-                    </dependencies>
+                  <dependencies>
+                    <dependency>
+                      <groupId>g</groupId>
+                      <artifactId>a</artifactId>
+                      <version>1</version>
+                    </dependency>
+                  </dependencies>
                 </project>
                 """);
 
@@ -89,21 +82,20 @@ class AddCommandTest extends BaseTest {
 
     @Test
     void failIfDuplicateMultiple() throws Exception {
-        var pomPath = tempDir.resolve("pom.xml");
-        Files.writeString(pomPath, """
+        var pomPath = writeString(tempDir.resolve("pom.xml"), """
                 <project>
-                    <dependencies>
-                        <dependency>
-                            <groupId>a</groupId>
-                            <artifactId>a</artifactId>
-                            <version>1</version>
-                        </dependency>
-                        <dependency>
-                            <groupId>b</groupId>
-                            <artifactId>b</artifactId>
-                            <version>1</version>
-                        </dependency>
-                    </dependencies>
+                  <dependencies>
+                    <dependency>
+                      <groupId>a</groupId>
+                      <artifactId>a</artifactId>
+                      <version>1</version>
+                    </dependency>
+                    <dependency>
+                      <groupId>b</groupId>
+                      <artifactId>b</artifactId>
+                      <version>1</version>
+                    </dependency>
+                  </dependencies>
                 </project>
                 """);
 
@@ -111,74 +103,55 @@ class AddCommandTest extends BaseTest {
         assertSame(1, ec);
     }
 
-    static Stream<Arguments> excludeVersionForParentManaged() {
-        return Stream.of(
-                Arguments.of("g:a"),
-                Arguments.of("a"));
-    }
-
     @ParameterizedTest
-    @MethodSource
+    @ValueSource(strings = { "g:a", "a" })
     void excludeVersionForParentManaged(String d) throws Exception {
-        var base = tempDir.resolve("app");
-        Files.createDirectory(base);
-
-        var parentPomPath = base.resolve("pom.xml");
-        Files.writeString(parentPomPath, """
+        var parent = writeString(createDirectory(tempDir.resolve("app")).resolve("pom.xml"), """
                 <project>
-                    <groupId>app</groupId>
-                    <artifactId>parent</artifactId>
-                    <version>1</version>
-                    <packaging>pom</packaging>
-                    <dependencyManagement>
-                        <dependencies>
-                            <dependency>
-                                <groupId>g</groupId>
-                                <artifactId>a</artifactId>
-                                <version>1</version>
-                            </dependency>
-                        </dependencies>
-                    </dependencyManagement>
+                  <groupId>app</groupId>
+                  <artifactId>parent</artifactId>
+                  <version>1</version>
+                  <packaging>pom</packaging>
+                  <dependencyManagement>
+                    <dependencies>
+                      <dependency>
+                        <groupId>g</groupId>
+                        <artifactId>a</artifactId>
+                        <version>1</version>
+                      </dependency>
+                    </dependencies>
+                  </dependencyManagement>
                 </project>
-                """);
-
-        var submodulePath = base.resolve("child");
-        var pomPath = submodulePath.resolve("pom.xml");
-        Files.createDirectory(submodulePath);
+                """).getParent();
+        var child = createDirectory(parent.resolve("child"));
+        var pomPath = child.resolve("pom.xml");
 
         var ec = underTest.execute("add", "-f", pomPath.toString(), d);
         assertSame(0, ec);
-
-        var matched = evalXpath(pomPath,
-                "/project/dependencies/dependency[groupId='g' and artifactId='a' and not(version)]");
-        assertSame(1, matched, "Nodes matching");
+        assertXpath(pomPath, "/project/dependencies/dependency[groupId='g' and artifactId='a' and not(version)]", 1);
     }
 
     @Test
     void addAsManangedDependencyForPomPackaging() throws Exception {
-        var pomPath = tempDir.resolve("pom.xml");
-        Files.writeString(pomPath, """
+        var pomPath = writeString(tempDir.resolve("pom.xml"), """
                 <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <groupId>a</groupId>
-                    <artifactId>a</artifactId>
-                    <version>1</version>
-                    <packaging>pom</packaging>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>a</groupId>
+                  <artifactId>a</artifactId>
+                  <version>1</version>
+                  <packaging>pom</packaging>
                 </project>
                 """);
 
         underTest.execute("add", "-f", pomPath.toString(), "b:b:1");
 
-        var matched = evalXpath(pomPath, "/project/dependencyManagement/dependencies/dependency[groupId='b']");
-        assertSame(1, matched, "Nodes matching");
+        assertXpath(pomPath, "/project/dependencyManagement/dependencies/dependency[groupId='b']", 1);
     }
 
     @Test
     void failIfJarHasNoMavenInfo() throws Exception {
-        var libDir = tempDir.resolve("lib");
-        var projectDir = tempDir.resolve("project");
-        Files.createDirectory(libDir);
-        Files.createDirectory(projectDir);
+        var libDir = createDirectory(tempDir.resolve("lib"));
+        var projectDir = createDirectory(tempDir.resolve("project"));
 
         var jarPath = libDir.resolve("a.jar");
         try (var zip = new ZipOutputStream(Files.newOutputStream(jarPath))) {
@@ -190,10 +163,8 @@ class AddCommandTest extends BaseTest {
 
     @Test
     void addByJarWithMavenInfo() throws Exception {
-        var libDir = tempDir.resolve("lib");
-        var projectDir = tempDir.resolve("project");
-        Files.createDirectory(libDir);
-        Files.createDirectory(projectDir);
+        var libDir = createDirectory(tempDir.resolve("lib"));
+        var projectDir = createDirectory(tempDir.resolve("project"));
 
         var jarPath = libDir.resolve("a.jar");
         try (var zip = new ZipOutputStream(Files.newOutputStream(jarPath))) {
@@ -214,86 +185,75 @@ class AddCommandTest extends BaseTest {
 
     @Test
     void shouldFailWhenAddingPathWithoutPomXml() throws Exception {
-        var parentDir = tempDir.resolve("hello");
-        var apiDir = parentDir.resolve("hello-api");
-        var coreDir = parentDir.resolve("hello-core");
+        var parentDir = createDirectory(tempDir.resolve("hello"));
+        var apiDir = createDirectory(parentDir.resolve("hello-api"));
+        var coreDir = createDirectory(parentDir.resolve("hello-core"));
 
-        Files.createDirectory(parentDir);
-        Files.createDirectory(apiDir);
-        Files.createDirectory(coreDir);
-
-        Files.writeString(parentDir.resolve("pom.xml"), """
+        writeString(parentDir.resolve("pom.xml"), """
                 <project>
-                    <modelVersion>4.0.0</modelVersion>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>hello</groupId>
+                  <artifactId>hello</artifactId>
+                  <version>1</version>
+                </project>
+                """);
+        var pomPath = writeString(coreDir.resolve("pom.xml"), """
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <parent>
                     <groupId>hello</groupId>
                     <artifactId>hello</artifactId>
                     <version>1</version>
-                </project>
-                """);
-        Files.writeString(coreDir.resolve("pom.xml"), """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <parent>
-                        <groupId>hello</groupId>
-                        <artifactId>hello</artifactId>
-                        <version>1</version>
-                    </parent>
-                    <artifactId>hello-core</artifactId>
+                  </parent>
+                  <artifactId>hello-core</artifactId>
                 </project>
                 """);
 
-        var ec = underTest.execute("add", "-f", coreDir.resolve("pom.xml").toString(), apiDir.toString());
+        var ec = underTest.execute("add", "-f", pomPath.toString(), apiDir.toString());
         assertSame(picocli.CommandLine.ExitCode.USAGE, ec);
     }
 
     @Test
     void canAddByPath() throws Exception {
-        var parentDir = tempDir.resolve("hello");
-        var apiDir = parentDir.resolve("hello-api");
-        var coreDir = parentDir.resolve("hello-core");
+        var parentDir = createDirectory(tempDir.resolve("hello"));
+        var apiDir = createDirectory(parentDir.resolve("hello-api"));
+        var coreDir = createDirectory(parentDir.resolve("hello-core"));
 
-        Files.createDirectory(parentDir);
-        Files.createDirectory(apiDir);
-        Files.createDirectory(coreDir);
-
-        Files.writeString(parentDir.resolve("pom.xml"), """
+        writeString(parentDir.resolve("pom.xml"), """
                 <project>
-                    <modelVersion>4.0.0</modelVersion>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>hello</groupId>
+                  <artifactId>hello</artifactId>
+                  <version>1</version>
+                </project>
+                """);
+        writeString(apiDir.resolve("pom.xml"), """
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <parent>
                     <groupId>hello</groupId>
                     <artifactId>hello</artifactId>
                     <version>1</version>
-                </project>
-                """);
-        Files.writeString(apiDir.resolve("pom.xml"), """
-                <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <parent>
-                        <groupId>hello</groupId>
-                        <artifactId>hello</artifactId>
-                        <version>1</version>
-                    </parent>
-                    <artifactId>hello-api</artifactId>
+                  </parent>
+                  <artifactId>hello-api</artifactId>
                 </project>
                 """);
 
-        var pomPath = coreDir.resolve("pom.xml");
-        Files.writeString(pomPath, """
+        var pomPath = writeString(coreDir.resolve("pom.xml"), """
                 <project>
-                    <modelVersion>4.0.0</modelVersion>
-                    <parent>
-                        <groupId>hello</groupId>
-                        <artifactId>hello</artifactId>
-                        <version>1</version>
-                    </parent>
-                    <artifactId>hello-core</artifactId>
+                  <modelVersion>4.0.0</modelVersion>
+                  <parent>
+                    <groupId>hello</groupId>
+                    <artifactId>hello</artifactId>
+                    <version>1</version>
+                  </parent>
+                  <artifactId>hello-core</artifactId>
                 </project>
                 """);
 
         var ec = underTest.execute("add", "-f", pomPath.toString(), apiDir.toString());
         assertSame(0, ec);
-
-        var matched = evalXpath(pomPath, "/project/dependencies/dependency[artifactId='hello-api']");
-        assertSame(1, matched, "Nodes matching");
+        assertXpath(pomPath, "/project/dependencies/dependency[artifactId='hello-api']", 1);
     }
 
     @Test
@@ -302,248 +262,190 @@ class AddCommandTest extends BaseTest {
         var ec = underTest.execute("add", "-f", pomPath.toString(), "com.fasterxml.jackson.core:jackson-databind");
         assertSame(0, ec);
 
-        var matched = evalXpath(pomPath,
-                "/project/dependencies/dependency[groupId='com.fasterxml.jackson.core' and artifactId='jackson-databind' and version]");
-        assertSame(1, matched, "Nodes matching");
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='com.fasterxml.jackson.core' and artifactId='jackson-databind' and version]",
+                1);
     }
 
     @ParameterizedTest
     @MethodSource
-    void addManagedFailOnDuplicate(Function<Path, Path> pomPathCreator) throws IOException {
+    void addManagedFailOnDuplicate(PathFunction pomPathCreator) throws IOException {
         var pomPath = pomPathCreator.apply(tempDir);
         var ec = underTest.execute("add", "-d", "-f", pomPath.toString(), "jackson-databind");
         assertSame(1, ec);
     }
 
-    static Stream<Function<Path, Path>> addManagedFailOnDuplicate() {
-        return Stream.of((tempDir) -> {
-            var parentPomPath = tempDir.resolve("pom.xml");
-            var childDir = tempDir.resolve("api");
-
-            try {
-                Files.writeString(parentPomPath, """
+    static Stream<PathFunction> addManagedFailOnDuplicate() {
+        return Stream.of(
+                // Dependency managed by parent
+                (tempDir) -> writeString(createDirectory(writeString(tempDir.resolve("pom.xml"), """
                         <project>
-                            <modelVersion>4.0.0</modelVersion>
+                          <modelVersion>4.0.0</modelVersion>
+                          <groupId>g</groupId>
+                          <artifactId>a</artifactId>
+                          <version>1</version>
+                          <packaging>pom</packaging>
+                          <dependencyManagement>
+                            <dependencies>
+                              <dependency>
+                                <groupId>com.fasterxml.jackson.core</groupId>
+                                <artifactId>jackson-databind</artifactId>
+                                <version>2.14.0</version>
+                              </dependency>
+                            </dependencies>
+                          </dependencyManagement>
+                          <modules>
+                            <module>api</module>
+                          </modules>
+                        </project>
+                        """).getParent().resolve("api")).resolve("pom.xml"), """
+                        <project>
+                          <modelVersion>4.0.0</modelVersion>
+                          <parent>
                             <groupId>g</groupId>
                             <artifactId>a</artifactId>
                             <version>1</version>
-                            <packaging>pom</packaging>
-                            <dependencyManagement>
-                                <dependencies>
-                                    <dependency>
-                                        <groupId>com.fasterxml.jackson.core</groupId>
-                                        <artifactId>jackson-databind</artifactId>
-                                        <version>2.14.0</version>
-                                    </dependency>
-                                </dependencies>
-                            </dependencyManagement>
-                            <modules>
-                                <module>api</module>
-                            </modules>
+                            <relativePath>..</relativePath>
+                          </parent>
+                          <dependencies>
+                            <dependency>
+                              <groupId>com.fasterxml.jackson.core</groupId>
+                              <artifactId>jackson-databind</artifactId>
+                            </dependency>
+                          </dependencies>
                         </project>
-                        """);
-
-                Files.createDirectory(childDir);
-                var pomPath = childDir.resolve("pom.xml");
-
-                Files.writeString(pomPath, """
+                        """),
+                // Dependency managed by remote parent
+                (tempDir) -> writeString(tempDir.resolve("pom.xml"), """
                         <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <parent>
-                                <groupId>g</groupId>
-                                <artifactId>a</artifactId>
-                                <version>1</version>
-                                <relativePath>..</relativePath>
-                            </parent>
+                          <modelVersion>4.0.0</modelVersion>
+                          <parent>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-starter-parent</artifactId>
+                            <version>3.1.0</version>
+                          </parent>
+                          <artifactId>a</artifactId>
+                          <version>1</version>
+                          <dependencies>
+                            <dependency>
+                              <groupId>com.fasterxml.jackson.core</groupId>
+                              <artifactId>jackson-databind</artifactId>
+                            </dependency>
+                          </dependencies>
+                        </project>
+                        """),
+                // Dependency managed by imported dependency
+                (tempDir) -> writeString(tempDir.resolve("pom.xml"), """
+                        <project>
+                          <modelVersion>4.0.0</modelVersion>
+                          <groupId>g</groupId>
+                          <artifactId>a</artifactId>
+                          <version>1</version>
+                          <dependencyManagement>
                             <dependencies>
-                                <dependency>
-                                    <groupId>com.fasterxml.jackson.core</groupId>
-                                    <artifactId>jackson-databind</artifactId>
-                                </dependency>
-                            </dependencies>
-                        </project>
-                        """);
-                return pomPath;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }, (tempDir) -> {
-            var pomPath = tempDir.resolve("pom.xml");
-            try {
-                Files.writeString(pomPath, """
-                        <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <parent>
+                              <dependency>
                                 <groupId>org.springframework.boot</groupId>
-                                <artifactId>spring-boot-starter-parent</artifactId>
+                                <artifactId>spring-boot-dependencies</artifactId>
                                 <version>3.1.0</version>
-                            </parent>
-                            <artifactId>a</artifactId>
-                            <version>1</version>
-                            <dependencies>
-                                <dependency>
-                                    <groupId>com.fasterxml.jackson.core</groupId>
-                                    <artifactId>jackson-databind</artifactId>
-                                </dependency>
+                                <type>pom</type>
+                                <scope>import</scope>
+                              </dependency>
                             </dependencies>
+                          </dependencyManagement>
+                          <dependencies>
+                            <dependency>
+                              <groupId>com.fasterxml.jackson.core</groupId>
+                              <artifactId>jackson-databind</artifactId>
+                            </dependency>
+                          </dependencies>
                         </project>
-                        """);
-                return pomPath;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }, (tempDir) -> {
-            var pomPath = tempDir.resolve("pom.xml");
-            try {
-                Files.writeString(pomPath, """
-                        <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <groupId>g</groupId>
-                            <artifactId>a</artifactId>
-                            <version>1</version>
-                            <dependencyManagement>
-                                <dependencies>
-                                    <dependency>
-                                        <groupId>org.springframework.boot</groupId>
-                                        <artifactId>spring-boot-dependencies</artifactId>
-                                        <version>3.1.0</version>
-                                        <type>pom</type>
-                                        <scope>import</scope>
-                                    </dependency>
-                                </dependencies>
-                            </dependencyManagement>
-                            <dependencies>
-                                <dependency>
-                                    <groupId>com.fasterxml.jackson.core</groupId>
-                                    <artifactId>jackson-databind</artifactId>
-                                </dependency>
-                            </dependencies>
-                        </project>
-                        """);
-                return pomPath;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
+                        """));
     }
 
     @ParameterizedTest
     @MethodSource
-    void addManaged(Function<Path, Path> pomPathCreator) throws IOException {
+    void addManaged(PathFunction pomPathCreator) throws IOException {
         var pomPath = pomPathCreator.apply(tempDir);
         var ec = underTest.execute("add", "-f", pomPath.toString(), "jackson-databind");
         assertSame(0, ec);
-
-        var matched = evalXpath(pomPath,
-                "/project/dependencies/dependency[groupId='com.fasterxml.jackson.core' and artifactId='jackson-databind' and not(version)]");
-        assertSame(1, matched, "Nodes matching");
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='com.fasterxml.jackson.core' and artifactId='jackson-databind' and not(version)]",
+                1);
     }
 
-    static Stream<Function<Path, Path>> addManaged() {
-        return Stream.of((tempDir) -> {
-            var parentPomPath = tempDir.resolve("pom.xml");
-            var childDir = tempDir.resolve("api");
-
-            try {
-                Files.writeString(parentPomPath, """
+    static Stream<PathFunction> addManaged() {
+        return Stream.of(
+                // Dependency managed by parent
+                (tempDir) -> writeString(createDirectory(writeString(tempDir.resolve("pom.xml"), """
                         <project>
-                            <modelVersion>4.0.0</modelVersion>
+                          <modelVersion>4.0.0</modelVersion>
+                          <groupId>g</groupId>
+                          <artifactId>a</artifactId>
+                          <version>1</version>
+                          <packaging>pom</packaging>
+                          <dependencyManagement>
+                            <dependencies>
+                              <dependency>
+                                <groupId>com.fasterxml.jackson.core</groupId>
+                                <artifactId>jackson-databind</artifactId>
+                                <version>2.14.0</version>
+                              </dependency>
+                            </dependencies>
+                          </dependencyManagement>
+                          <modules>
+                            <module>api</module>
+                          </modules>
+                        </project>
+                        """).getParent().resolve("api")).resolve("pom.xml"), """
+                        <project>
+                          <modelVersion>4.0.0</modelVersion>
+                          <parent>
                             <groupId>g</groupId>
                             <artifactId>a</artifactId>
                             <version>1</version>
-                            <packaging>pom</packaging>
-                            <dependencyManagement>
-                                <dependencies>
-                                    <dependency>
-                                        <groupId>com.fasterxml.jackson.core</groupId>
-                                        <artifactId>jackson-databind</artifactId>
-                                        <version>2.14.0</version>
-                                    </dependency>
-                                </dependencies>
-                            </dependencyManagement>
-                            <modules>
-                                <module>api</module>
-                            </modules>
+                            <relativePath>..</relativePath>
+                          </parent>
                         </project>
-                        """);
-
-                Files.createDirectory(childDir);
-                var pomPath = childDir.resolve("pom.xml");
-
-                Files.writeString(pomPath, """
+                        """),
+                // Dependency managed by remote parent
+                (tempDir) -> writeString(tempDir.resolve("pom.xml"), """
                         <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <parent>
-                                <groupId>g</groupId>
-                                <artifactId>a</artifactId>
-                                <version>1</version>
-                                <relativePath>..</relativePath>
-                            </parent>
+                          <modelVersion>4.0.0</modelVersion>
+                          <parent>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-starter-parent</artifactId>
+                            <version>3.1.0</version>
+                          </parent>
+                          <artifactId>a</artifactId>
+                          <version>1</version>
                         </project>
-                        """);
-                return pomPath;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }, (tempDir) -> {
-            var pomPath = tempDir.resolve("pom.xml");
-            try {
-                Files.writeString(pomPath, """
+                        """),
+                // Dependency managed by imported dependency
+                (tempDir) -> writeString(tempDir.resolve("pom.xml"), """
                         <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <parent>
+                          <modelVersion>4.0.0</modelVersion>
+                          <groupId>g</groupId>
+                          <artifactId>a</artifactId>
+                          <version>1</version>
+                          <dependencyManagement>
+                            <dependencies>
+                              <dependency>
                                 <groupId>org.springframework.boot</groupId>
-                                <artifactId>spring-boot-starter-parent</artifactId>
+                                <artifactId>spring-boot-dependencies</artifactId>
                                 <version>3.1.0</version>
-                            </parent>
-                            <artifactId>a</artifactId>
-                            <version>1</version>
+                                <type>pom</type>
+                                <scope>import</scope>
+                              </dependency>
+                            </dependencies>
+                          </dependencyManagement>
                         </project>
-                        """);
-                return pomPath;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }, (tempDir) -> {
-            var pomPath = tempDir.resolve("pom.xml");
-            try {
-                Files.writeString(pomPath, """
-                        <project>
-                            <modelVersion>4.0.0</modelVersion>
-                            <groupId>g</groupId>
-                            <artifactId>a</artifactId>
-                            <version>1</version>
-                            <dependencyManagement>
-                                <dependencies>
-                                    <dependency>
-                                        <groupId>org.springframework.boot</groupId>
-                                        <artifactId>spring-boot-dependencies</artifactId>
-                                        <version>3.1.0</version>
-                                        <type>pom</type>
-                                        <scope>import</scope>
-                                    </dependency>
-                                </dependencies>
-                            </dependencyManagement>
-                        </project>
-                        """);
-                return pomPath;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
+                        """));
     }
 
     @FunctionalInterface
-    public interface SilentSupplier<T> {
-        T get() throws Exception;
+    interface PathFunction {
 
-        default T getSilently() {
-            try {
-                return get();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        }
+        Path apply(Path path) throws IOException;
     }
 
 }

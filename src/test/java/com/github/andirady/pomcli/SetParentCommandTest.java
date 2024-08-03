@@ -17,7 +17,7 @@ class SetParentCommandTest extends BaseTest {
     @TempDir
     Path tempDir;
 
-	@BeforeEach
+    @BeforeEach
     void setup() {
         var app = new Main();
         underTest = new CommandLine(app);
@@ -36,8 +36,6 @@ class SetParentCommandTest extends BaseTest {
         assertSame(0, ec, "Exit code");
 
         var expr = "/project/parent[groupId='com.example' and artifactId='some-parent' and version='1.0.0']";
-        var matched = evalXpath(pomPath, expr);
-
-        assertSame(1, matched, "Nodes matched");
+        assertXpath(pomPath, expr, 1);
     }
 }

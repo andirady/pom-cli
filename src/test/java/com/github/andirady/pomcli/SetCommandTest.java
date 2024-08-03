@@ -1,12 +1,9 @@
 package com.github.andirady.pomcli;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,12 +43,7 @@ class SetCommandTest extends BaseTest {
 
         var ec = underTest.execute("set", "-f", pomPath.toString(), "foo.bar=1");
         assertSame(0, ec);
-
-        var s = Files.readString(pomPath);
-        var pat = Pattern.compile(".*<properties>\\s*<foo.bar>1</foo.bar>\\s*</properties>.*", Pattern.MULTILINE);
-        var m = pat.matcher(s);
-        assertNotNull(m);
-        assertTrue(m.find());
+        assertXpath(pomPath, "/project/properties[foo.bar='1']", 1);
     }
 
     @Test
@@ -61,12 +53,8 @@ class SetCommandTest extends BaseTest {
 
         var ec = underTest.execute("set", "-f", pomPath.toString(), "foo.bar=1", "say=hello");
         assertSame(0, ec);
-
-        var s = Files.readString(pomPath);
-        var pat = Pattern.compile(".*<properties>\\s*<foo.bar>1</foo.bar>\\s*<say>hello</say>\\s*</properties>.*", Pattern.MULTILINE);
-        var m = pat.matcher(s);
-        assertNotNull(m);
-        assertTrue(m.find());
+        assertXpath(pomPath, "/project/properties[foo.bar='1']", 1);
+        assertXpath(pomPath, "/project/properties[say='hello']", 1);
     }
 
     @Test
@@ -78,11 +66,6 @@ class SetCommandTest extends BaseTest {
 
         var ec = underTest.execute("set", "-f", pomPath.toString(), "foo.bar=world");
         assertSame(0, ec);
-
-        var s = Files.readString(pomPath);
-        var pat = Pattern.compile(".*<properties>\\s*<foo.bar>world</foo.bar>\\s*</properties>.*", Pattern.MULTILINE);
-        var m = pat.matcher(s);
-        assertNotNull(m);
-        assertTrue(m.find());
+        assertXpath(pomPath, "/project/properties[foo.bar='world']", 1);
     }
 }

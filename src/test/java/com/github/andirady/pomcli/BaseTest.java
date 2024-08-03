@@ -1,5 +1,6 @@
 package com.github.andirady.pomcli;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -45,7 +46,7 @@ class BaseTest {
         }
     }
 
-    int evalXpath(Path pomPath, String expr) {
+    private int evalXpath(Path pomPath, String expr) {
         try (var is = Files.newInputStream(pomPath)) {
             var dbf = DocumentBuilderFactory.newInstance();
             var db = dbf.newDocumentBuilder();
@@ -56,6 +57,14 @@ class BaseTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    void assertXpath(Path pomPath, String expr, int count) {
+        assertXpath(pomPath, expr, count, "Nodes matching");
+    }
+
+    void assertXpath(Path pomPath, String expr, int count, String message) {
+        assertSame(count, evalXpath(pomPath, expr), message);
     }
 
     static void deleteRecursive(Path path) {
@@ -73,8 +82,8 @@ class BaseTest {
     @AfterAll
     static void deleteTempDirs() throws IOException {
         Files.list(TEST_PROJECTS_PATH)
-             .filter(p -> p.getFileName().startsWith("tmp"))
-             .forEach(BaseTest::deleteRecursive);
+                .filter(p -> p.getFileName().startsWith("tmp"))
+                .forEach(BaseTest::deleteRecursive);
     }
 
 }

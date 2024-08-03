@@ -42,8 +42,6 @@ class PlugCommandTest extends BaseTest {
         assertSame(0, ec, "Exit code");
 
         var expr = "/project/build/plugins/plugin[" + subexpr + "]";
-        var matched = evalXpath(pomPath, expr);
-
-        assertSame(1, matched, "Nodes matched");
+        assertXpath(pomPath, expr, 1);
     }
 }
