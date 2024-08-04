@@ -28,7 +28,7 @@ import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-@Command(name = "set")
+@Command(name = "set", description = "Set properties")
 public class SetCommand implements Runnable {
 
     record Property(String key, String value) {

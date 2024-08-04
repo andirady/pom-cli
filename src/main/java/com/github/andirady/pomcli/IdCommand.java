@@ -31,7 +31,7 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.Help.Ansi;
 
-@Command(name = "id")
+@Command(name = "id", description = "Sets the project ID")
 public class IdCommand implements Callable<Integer> {
 
     private static final Logger LOG = Logger.getLogger(IdCommand.class.getName());

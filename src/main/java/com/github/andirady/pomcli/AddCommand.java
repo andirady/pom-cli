@@ -42,7 +42,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
-@Command(name = "add", sortOptions = false)
+@Command(name = "add", sortOptions = false, description = "Add dependencies")
 public class AddCommand implements Runnable {
 
     private static final Logger LOG = Logger.getLogger("add");

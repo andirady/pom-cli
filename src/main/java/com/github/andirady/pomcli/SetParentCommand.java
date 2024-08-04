@@ -28,7 +28,7 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.Model.CommandSpec;
 
-@Command(name = "parent")
+@Command(name = "parent", description = "Sets the parent for the project")
 public class SetParentCommand extends ModifyingCommandBase {
 
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")

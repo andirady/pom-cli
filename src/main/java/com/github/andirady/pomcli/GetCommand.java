@@ -32,7 +32,7 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
 
-@Command(name = "get")
+@Command(name = "get", description = "Get properties")
 public class GetCommand implements Runnable {
 
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")

@@ -19,7 +19,6 @@ import static java.nio.file.Files.writeString;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterEach;

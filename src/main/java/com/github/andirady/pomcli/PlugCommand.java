@@ -29,7 +29,7 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
 
-@Command(name = "plug")
+@Command(name = "plug", description = "Add a plugin")
 public class PlugCommand extends ModifyingCommandBase {
 
     @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")

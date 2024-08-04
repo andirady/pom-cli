@@ -30,7 +30,7 @@ import picocli.CommandLine.Spec;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 
-@Command(name = "search")
+@Command(name = "search", description = "Search for artifacts")
 public class SearchCommand implements Runnable {
 
     @ArgGroup(exclusive = true, multiplicity = "1")
