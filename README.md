@@ -212,6 +212,22 @@ $ pom plug maven-resources-plugin
 🔌 org.apache.maven.plugins:maven-resources-plugin:1.0.0 plugged
 ```
 
+If the current POM is a child of another POM, you can add a plugin
+by simply stating the plugin's artifact ID.
+```
+$ # Add plugin managed by parent
+$ pom plug spring-boot-maven-plugin
+🔌 org.springframework.boot:spring-boot-maven-plugin:1.0.0 plugged
+```
+or, if you're starting with an empty project, you can run
+```
+pom parent parent.group:parent.artifactId:1.0.0 plug example-maven-plugin
+```
+e.g.:
+```
+pom parent org.springframework.boot:spring-boot-starter-parent plug spring-boot-maven-plugin
+```
+
 ## Building 
 
 This project requires Java 21+, GraalVM CE and Maven 3.8.4+.

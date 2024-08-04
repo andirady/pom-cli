@@ -15,15 +15,23 @@
  */
 package com.github.andirady.pomcli;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
+
 import org.apache.maven.model.Build;
 import org.apache.maven.model.BuildBase;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginContainer;
+import org.apache.maven.model.PluginManagement;
 import org.apache.maven.model.Profile;
 
 public class AddPlugin {
 
+    private static final int MAX_RECURSION = 10;
     private final String profileId;
 
     public AddPlugin() {
@@ -36,15 +44,16 @@ public class AddPlugin {
 
     public Plugin addPlugin(Model model, String artifactId) {
         var plugin = new Plugin();
-        new Profile();
         plugin.setArtifactId(artifactId);
         return addPlugin(model, plugin);
     }
 
     public Plugin addPlugin(Model model, Plugin plugin) {
         if (plugin.getVersion() == null) {
-            var query = new QuerySpec(plugin.getGroupId(), plugin.getArtifactId(), null);
-            plugin.setVersion(new GetLatestVersion().execute(query).orElseThrow());
+            if (!resolvePluginManagement(model, plugin, 0)) {
+                var query = new QuerySpec(plugin.getGroupId(), plugin.getArtifactId(), null);
+                plugin.setVersion(new GetLatestVersion().execute(query).orElseThrow());
+            }
         }
 
         BuildBase build = switch (profileId) {
@@ -86,6 +95,34 @@ public class AddPlugin {
         pluginContainer.addPlugin(plugin);
 
         return plugin;
+    }
+
+    private boolean resolvePluginManagement(Model model, Plugin plugin, int loopIndex) {
+        if (!(model.getParent() instanceof Parent parent)) {
+            return false;
+        }
+
+        var parentModel = ResolutionProvider.getInstance().readModel(parent.getGroupId(), parent.getArtifactId(),
+                parent.getVersion());
+        var managed = Optional.ofNullable(parentModel.getBuild())
+                .map(Build::getPluginManagement)
+                .filter(Objects::nonNull)
+                .map(PluginManagement::getPlugins).map(List::stream)
+                .orElseGet(Stream::of)
+                .filter(p -> p.getArtifactId().equals(plugin.getArtifactId()))
+                .findFirst()
+                .orElse(null);
+
+        if (managed != null) {
+            plugin.setGroupId(managed.getGroupId());
+            return true;
+        }
+
+        if (++loopIndex > MAX_RECURSION) {
+            throw new IllegalStateException("Exceeded max recursion of " + MAX_RECURSION);
+        }
+
+        return resolvePluginManagement(parentModel, plugin, loopIndex);
     }
 
 }

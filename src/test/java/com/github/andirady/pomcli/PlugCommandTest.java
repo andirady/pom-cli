@@ -15,8 +15,11 @@
  */
 package com.github.andirady.pomcli;
 
+import static java.nio.file.Files.writeString;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +36,7 @@ class PlugCommandTest extends BaseTest {
     @TempDir
     Path tempDir;
 
-	@BeforeEach
+    @BeforeEach
     void setup() {
         var app = new Main();
         underTest = new CommandLine(app);
@@ -57,6 +60,27 @@ class PlugCommandTest extends BaseTest {
         assertSame(0, ec, "Exit code");
 
         var expr = "/project/build/plugins/plugin[" + subexpr + "]";
+        assertXpath(pomPath, expr, 1);
+    }
+
+    @ParameterizedTest
+    @CsvSource(quoteCharacter = '`', textBlock = """
+            `<project>
+              <modelVersion>4.0.0</modelVersion>
+              <parent>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>3.2.1</version>
+              </parent>
+              <artifactId>hello</artifactId>
+            </project>`, spring-boot-maven-plugin""")
+    void supportsManagedPlugin(String pomContent, String input) throws IOException {
+        var pomPath = writeString(tempDir.resolve("pom.xml"), pomContent);
+
+        var ec = underTest.execute("plug", "-f", pomPath.toString(), input);
+        assertSame(0, ec, "Exit code");
+
+        var expr = "/project/build/plugins/plugin[groupId='org.springframework.boot' and artifactId='spring-boot-maven-plugin']";
         assertXpath(pomPath, expr, 1);
     }
 }
