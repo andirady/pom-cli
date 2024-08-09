@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
 import picocli.CommandLine.Command;
@@ -109,14 +110,53 @@ public class IdCommand implements Callable<Integer> {
         if (as != null) {
             pom.setPackaging(as);
         }
+        
+        ensureParentPomHasThisModule(pom, pomPath);
 
-        var pomWriter = new DefaultModelWriter();
+        writePom(pom, pomPath);
+    }
+
+    /**
+     * If pom has a parent defined, load this parent
+     * and make sure the parent modules contains this module
+     * @param pom
+     * @param pomPath2
+     */
+	private void ensureParentPomHasThisModule(Model pom, Path pomPath) {
+		if(pom.getParent()!=null) {
+			Parent parentPomLocation = pom.getParent();
+			if(parentPomLocation.getRelativePath()!=null) {
+				// pom has a parent in local machine
+				String parentPomRelativePath = parentPomLocation.getRelativePath();
+				if(!parentPomRelativePath.endsWith(".xml")) {
+					parentPomRelativePath += "/pom.xml";
+				}
+				Path parentPomPath = pomPath.getParent().resolve(parentPomRelativePath).normalize();
+				if(parentPomPath.toFile().exists()) {
+			        var reader = new DefaultModelReader(null);
+		            try (var is = Files.newInputStream(parentPomPath)) {
+		                Model parentPom = reader.read(is, null);
+		                String moduleId = parentPomPath.getParent().relativize(pomPath.getParent()).toString();
+		                if(!parentPom.getModules().contains(moduleId)) {
+							parentPom.addModule(moduleId);
+			                writePom(parentPom, parentPomPath);
+		                }
+		            } catch (IOException e) {
+		                throw new UncheckedIOException(e);
+		            }
+				}
+			}
+		}
+	}
+
+	public static void writePom(Model pom, Path pomPath) {
+		var pomWriter = new DefaultModelWriter();
         try (var os = Files.newOutputStream(pomPath)) {
             pomWriter.write(os, null, pom);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
+	}
 
     private void parseId(String id, Model pom) {
         var parts = id.split(":", 3);

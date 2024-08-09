@@ -213,6 +213,10 @@ class IdCommandTest extends BaseTest {
 
         assertXpath(pomPath, "/project/parent[groupId='a' and artifactId='a' and version='1']", 1);
         assertEquals("jar a:b:1", out.toString().trim());
+        // Parent pom now has modules defined
+        assertXpath(parentPomPath, "/project/modules", 1);
+        // And a module with the right name is defined
+        assertXpath(parentPomPath, "/project/modules/module[contains(text(), 'b')]", 1);
     }
 
     @Test
@@ -238,6 +242,10 @@ class IdCommandTest extends BaseTest {
         var expr = "/project/parent[groupId='a' and artifactId='a' and version='1' and relativePath='../..']";
         assertXpath(pomPath, expr, 1);
         assertEquals("jar a:c:1", out.toString().trim());
+        // Parent pom now has modules defined
+        assertXpath(parentPomPath, "/project/modules", 1);
+        // And a module with the right name is defined
+        assertXpath(parentPomPath, "/project/modules/module[contains(text(), 'c')]", 1);
     }
 
     @Test
