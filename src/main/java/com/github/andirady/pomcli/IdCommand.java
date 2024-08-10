@@ -15,22 +15,25 @@
  */
 package com.github.andirady.pomcli;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
+
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
+
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
-import picocli.CommandLine.Help.Ansi;
 
 @Command(name = "id", description = "Sets the project ID")
 public class IdCommand implements Callable<Integer> {
@@ -45,6 +48,9 @@ public class IdCommand implements Callable<Integer> {
 
     @Option(names = { "-s", "--standalone" }, description = "Don't search for parent pom")
     boolean standalone;
+
+    @Option(names = { "-m", "--add-module" }, description = "Ensure module is added to parent", defaultValue = "true")
+    boolean addModule;
 
     @Parameters(arity = "0..1", paramLabel = "groupId:artifactId[:version]", description = { "Project id" })
     String id;
@@ -111,8 +117,14 @@ public class IdCommand implements Callable<Integer> {
             pom.setPackaging(as);
         }
 
-        if(!standalone) {
-        	ensureParentPomHasThisModule(pom, pomPath);
+        if(addModule) {
+	        if(standalone) {
+	        	LOG.info(() -> 
+	        			String.format("pom %s is created as standalone, so we don't check parent",
+	        					pomPath));
+	        } else {
+	        	ensureParentPomHasThisModule(pom, pomPath);
+	        }
         }
 
         writePom(pom, pomPath);
@@ -123,29 +135,43 @@ public class IdCommand implements Callable<Integer> {
      * and make sure the parent modules contains this module
      * @param pom
      * @param pomPath2
+     * @throws IOException 
      */
 	private void ensureParentPomHasThisModule(Model pom, Path pomPath) {
 		if(pom.getParent()!=null) {
+			LOG.info(String.format("pom %s has a parent, let's make sure we use it", pomPath));
 			Parent parentPomLocation = pom.getParent();
 			if(parentPomLocation.getRelativePath()!=null) {
-				// pom has a parent in local machine
 				String parentPomRelativePath = parentPomLocation.getRelativePath();
 				if(!parentPomRelativePath.endsWith(".xml")) {
 					parentPomRelativePath += "/pom.xml";
 				}
-				Path parentPomPath = pomPath.getParent().resolve(parentPomRelativePath).normalize();
-				if(parentPomPath.toFile().exists()) {
-			        var reader = new DefaultModelReader(null);
-		            try (var is = Files.newInputStream(parentPomPath)) {
-		                Model parentPom = reader.read(is, null);
-		                String moduleId = parentPomPath.getParent().relativize(pomPath.getParent()).toString();
-		                if(!parentPom.getModules().contains(moduleId)) {
-							parentPom.addModule(moduleId);
-			                writePom(parentPom, parentPomPath);
-		                }
-		            } catch (IOException e) {
-		                throw new UncheckedIOException(e);
-		            }
+				LOG.info(
+					String.format("We're searching for parent pom at %s", parentPomRelativePath));
+				// The gymnastic has been done to circumvent one limit of Path
+				// which doesn't check for file existence
+				try {
+					File canonicalPomFile = pomPath.toFile().getCanonicalFile();
+					File canonicalPomParentFile = canonicalPomFile.getParentFile();
+					Path canonicalPomParentPath = canonicalPomParentFile.toPath();
+					Path parentPomPath = canonicalPomParentPath.resolve(parentPomRelativePath).normalize();
+					LOG.info(
+							String.format("Parent pom has been found at path %s", parentPomPath));
+					if(parentPomPath.toFile().exists()) {
+				        var reader = new DefaultModelReader(null);
+			            try (var is = Files.newInputStream(parentPomPath)) {
+			                Model parentPom = reader.read(is, null);
+			                String moduleId = parentPomPath.getParent().relativize(canonicalPomParentPath).toString();
+			                if(!parentPom.getModules().contains(moduleId)) {
+								parentPom.addModule(moduleId);
+				                writePom(parentPom, parentPomPath);
+			                }
+			            } catch (IOException e) {
+							throw new UncheckedIOException("Can't read input stream from "+parentPomPath, e);
+			            }
+					}
+				} catch(IOException e) {
+					throw new UncheckedIOException(e);
 				}
 			}
 		}
