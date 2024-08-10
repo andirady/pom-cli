@@ -110,8 +110,10 @@ public class IdCommand implements Callable<Integer> {
         if (as != null) {
             pom.setPackaging(as);
         }
-        
-        ensureParentPomHasThisModule(pom, pomPath);
+
+        if(!standalone) {
+        	ensureParentPomHasThisModule(pom, pomPath);
+        }
 
         writePom(pom, pomPath);
     }
