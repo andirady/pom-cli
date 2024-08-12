@@ -19,10 +19,12 @@ import static java.nio.file.Files.writeString;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -80,6 +82,26 @@ class PlugCommandTest extends BaseTest {
         assertSame(0, ec, "Exit code");
 
         var expr = "/project/build/plugins/plugin[groupId='org.springframework.boot' and artifactId='spring-boot-maven-plugin']";
+        assertXpath(pomPath, expr, 1);
+    }
+
+    @Test
+    void addToPluginManagementWhenPackagedAsPom() throws IOException {
+        var pomPath = writeString(tempDir.resolve("pom.xml"), """
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>g</groupId>
+                  <artifactId>a</artifactId>
+                  <version>1</version>
+                  <packaging>pom</packaging>
+                </project>
+                """);
+        var ec = underTest.execute("plug", "-f", pomPath.toString(), "org.apache.maven.plugins:maven-failsafe-plugin");
+        assertSame(0, ec, "Exit code");
+
+        System.out.println(Files.readString(pomPath));
+
+        var expr = "/project/build/pluginManagement/plugins/plugin[artifactId='maven-failsafe-plugin' and version]";
         assertXpath(pomPath, expr, 1);
     }
 }

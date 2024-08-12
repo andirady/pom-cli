@@ -85,7 +85,16 @@ public class AddPlugin {
             }
         };
 
-        PluginContainer pluginContainer = "pom".equals(model.getPackaging()) ? build.getPluginManagement() : build;
+        PluginContainer pluginContainer = switch (model.getPackaging()) {
+            case "pom" -> {
+                if (build.getPluginManagement() == null) {
+                    build.setPluginManagement(new PluginManagement());
+                }
+
+                yield build.getPluginManagement();
+            }
+            default -> build;
+        };
         var alreadyPlugged = pluginContainer.getPlugins().stream().filter(p -> p.getKey().equals(plugin.getKey()))
                 .findFirst().isPresent();
         if (alreadyPlugged) {

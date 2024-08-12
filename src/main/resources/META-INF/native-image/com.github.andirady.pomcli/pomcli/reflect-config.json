@@ -15,6 +15,12 @@
   ]}
 ,
 {
+  "name":"com.github.andirady.pomcli.GetCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.github.andirady.pomcli.IdCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
