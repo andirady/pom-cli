@@ -2,7 +2,7 @@
 
 # pom-cli 🪄
 
-**pom-cli** lets you quickly create a ``pom.xml`` file as well as update it without manually editing the file. It's written in Java and compiled to native code with the help of graalvm.
+**pom-cli** lets you quickly create a ``pom.xml`` file as well as update it without manually editing the file. It's written in Java and compiled to native code with the help of [graalvm](https://www.graalvm.org/).
 
 Example flow:
 
