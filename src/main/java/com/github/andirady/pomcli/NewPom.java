@@ -36,49 +36,58 @@ public class NewPom {
     public Model newPom(Path pomPath, boolean standalone) {
         var model = new Model();
         model.setModelVersion("4.0.0");
+        String version = "0.0.1-SNAPSHOT";
+		model.setVersion(version);
+        model.setArtifactId(Path.of(System.getProperty("user.dir")).getFileName().toString());
         ParentPom parentPom = null;
         if (!standalone) {
             parentPom = findParentPom(pomPath, new DefaultModelReader(null));
         }
 
         if (parentPom != null) {
-            var parent = new Parent();
-            parent.setGroupId(parentPom.model().getGroupId());
-            parent.setArtifactId(parentPom.model().getArtifactId());
-            parent.setVersion(parentPom.model().getVersion());
-            var relativePath = pomPath.toAbsolutePath()
-                                      .getParent()
-                                      .relativize(parentPom.path().getParent()).toString();
-            if (!"..".equals(relativePath)) {
-                parent.setRelativePath(relativePath);
-            }
-            model.setParent(parent);
+            newPomWithParent(model, pomPath, parentPom);
         } else {
-            // Only set java version on main poms.
-            var props = model.getProperties();
-            // Use UTF-8 for default encoding.
-            props.setProperty("project.build.sourceEncoding", "UTF-8");
-
-            var majorVersion = GetJavaMajorVersion.getInstance().get(); 
-            if (Double.parseDouble(majorVersion) < 9) {
-                props.setProperty("maven.compiler.source", majorVersion);
-                props.setProperty("maven.compiler.target", majorVersion);
-            } else {
-                props.setProperty("maven.compiler.release", majorVersion);
-
-                new AddPlugin().addPlugin(model, "maven-compiler-plugin");
-            }
+            newPomWithoutParent(model);
         }
 
-        model.setVersion("0.0.1-SNAPSHOT");
-        model.setArtifactId(Path.of(System.getProperty("user.dir")).getFileName().toString());
         if (model.getParent() == null) {
             model.setGroupId(Config.getInstance().getDefaultGroupId());
-            model.setVersion("0.0.1-SNAPSHOT");
+            model.setVersion(version);
         }
 
         return model;
     }
+
+	private void newPomWithoutParent(Model model) {
+		// Only set java version on main poms.
+		var props = model.getProperties();
+		// Use UTF-8 for default encoding.
+		props.setProperty("project.build.sourceEncoding", "UTF-8");
+
+		var majorVersion = GetJavaMajorVersion.getInstance().get(); 
+		if (Double.parseDouble(majorVersion) < 9) {
+		    props.setProperty("maven.compiler.source", majorVersion);
+		    props.setProperty("maven.compiler.target", majorVersion);
+		} else {
+		    props.setProperty("maven.compiler.release", majorVersion);
+
+		    new AddPlugin().addPlugin(model, "maven-compiler-plugin");
+		}
+	}
+
+	private void newPomWithParent(Model model, Path pomPath, ParentPom parentPom) {
+		var parent = new Parent();
+		parent.setGroupId(parentPom.model().getGroupId());
+		parent.setArtifactId(parentPom.model().getArtifactId());
+		parent.setVersion(parentPom.model().getVersion());
+		var relativePath = pomPath.toAbsolutePath()
+		                          .getParent()
+		                          .relativize(parentPom.path().getParent()).toString();
+		if (!"..".equals(relativePath)) {
+		    parent.setRelativePath(relativePath);
+		}
+		model.setParent(parent);
+	}
 
 
     private ParentPom findParentPom(Path pomPath, ModelReader pomReader) {
