@@ -17,6 +17,7 @@ package com.github.andirady.pomcli;
 
 import static java.nio.file.Files.createDirectory;
 import static java.nio.file.Files.writeString;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.IOException;
@@ -453,6 +454,28 @@ class AddCommandTest extends BaseTest {
                           </dependencyManagement>
                         </project>
                         """));
+    }
+
+    @Test
+    void shouldSuccesfullyAddOptional() throws IOException {
+        var pomPath = tempDir.resolve("pom.xml");
+        underTest.execute("add", "-f", pomPath.toString(), "--optional", "g:a:1.0.0");
+        assertXpath(pomPath, "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0' and optional='true']", 1);
+    }
+
+    @Test
+    void shouldFailAddOptionalWhenPackagingIsPom() throws IOException {
+        var pomPath = tempDir.resolve("pom.xml");
+        writeString(pomPath, """
+                <project>
+                    <groupId>com.example</groupId>
+                    <artifactId>hello-app</artifactId>
+                    <version>1.0.0</version>
+                    <packaging>pom</packaging>
+                </project>
+                """);
+        var ec = underTest.execute("add", "-f", pomPath.toString(), "--optional", "g:a:1.0.0");
+        assertNotSame(0, ec);
     }
 
     @FunctionalInterface
