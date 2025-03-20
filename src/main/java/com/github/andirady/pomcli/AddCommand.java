@@ -31,12 +31,14 @@ import java.util.stream.Stream;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
 import org.apache.maven.model.io.ModelReader;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -85,6 +87,9 @@ public class AddCommand implements Runnable {
     @ArgGroup(exclusive = true, multiplicity = "0..1", order = 1)
     Scope scope;
 
+    @Option(names = { "-o", "--optional" }, defaultValue = "false")
+    public boolean optional;
+
     @Parameters(arity = "1..*", paramLabel = "DEPENDENCY", description = """
             groupId:artifactId[:version] or path to either
             a directory, pom.xml, or a jar file.""")
@@ -94,6 +99,7 @@ public class AddCommand implements Runnable {
     CommandSpec spec;
 
     private Model model;
+    private boolean isRemoteParent;
     private Model parentPom;
 
     @Override
@@ -136,6 +142,17 @@ public class AddCommand implements Runnable {
             });
         }
 
+        if (optional) {
+            if ("pom".equals(model.getPackaging())) {
+                throw new UnsupportedOperationException(
+                        "Adding optional dependency with `pom' packaging is not supported");
+            }
+            stream = stream.map(d -> {
+                d.setOptional(optional);
+                return d;
+            });
+        }
+
         var deps = stream.toList();
         existing.addAll(deps);
 
@@ -143,7 +160,7 @@ public class AddCommand implements Runnable {
         try (var os = Files.newOutputStream(pomPath)) {
             writer.write(os, null, model);
             deps.forEach(d -> System.out.printf(
-                    "%s %s%s added%n",
+                    "%s %s%s added%s%n",
                     switch (Objects.requireNonNullElse(d.getScope(), "compile")) {
                         case "provided" -> "📦";
                         case "runtime" -> "🏃";
@@ -152,7 +169,10 @@ public class AddCommand implements Runnable {
                         default -> "🔨";
                     },
                     coordString(d),
-                    Optional.ofNullable(d.getVersion()).map(":"::concat).orElse("")));
+                    d.getVersion() instanceof String version
+                            ? ":" + version
+                            : Ansi.AUTO.string(":@|italic,faint <managed>|@"),
+                    d.isOptional() ? Ansi.AUTO.string(" [@|yellow optional|@]") : ""));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -164,17 +184,20 @@ public class AddCommand implements Runnable {
             return;
         }
 
+        var filename = "pom.xml";
         var parentRelativePath = parent.getRelativePath();
         var parentPomPath = pomPath.toAbsolutePath().getParent().resolve(parentRelativePath);
-        var filename = "pom.xml";
         if (!parentPomPath.getFileName().toString().equals(filename)) {
             parentPomPath = parentPomPath.resolve(filename);
         }
 
+        LOG.fine("parentPomPath = " + parentPomPath);
         // If the parent pom doesn't exists, tread the parent as remote parent.
         if (!Files.exists(parentPomPath)) {
             LOG.fine("Resolving the parent pom since the relative path does not exists");
-            parentPom = ResolutionProvider.getInstance().readModel(parent.getGroupId(), parent.getArtifactId(), parent.getVersion());
+            isRemoteParent = true;
+            parentPom = ResolutionProvider.getInstance().readModel(parent.getGroupId(), parent.getArtifactId(),
+                    parent.getVersion());
             return;
         }
 
@@ -230,14 +253,22 @@ public class AddCommand implements Runnable {
                 return dep;
             }
 
-            var remotelyManaged = resolver.findByArtifactId(parentPom, dep.getGroupId(), dep.getArtifactId(), scopeName)
-                    .orElse(null);
-            if (remotelyManaged != null) {
-                if (dep.getGroupId() == null) {
-                    dep.setGroupId(remotelyManaged.getGroupId());
-                }
+            var remotePom = isRemoteParent
+                    ? parentPom
+                    : parentPom.getParent() instanceof Parent p
+                            ? resolver.readModel(p.getGroupId(), p.getArtifactId(), p.getVersion())
+                            : null;
+            if (remotePom != null) {
+                var remotelyManaged = resolver
+                        .findByArtifactId(remotePom, dep.getGroupId(), dep.getArtifactId(), scopeName)
+                        .orElse(null);
+                if (remotelyManaged != null) {
+                    if (dep.getGroupId() == null) {
+                        dep.setGroupId(remotelyManaged.getGroupId());
+                    }
 
-                return dep;
+                    return dep;
+                }
             }
         }
 
