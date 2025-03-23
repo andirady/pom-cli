@@ -31,6 +31,7 @@ import com.github.andirady.pomcli.solrsearch.SolrSearchRequest;
 import com.github.andirady.pomcli.solrsearch.SolrSearchResult;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
 
 class SearchCommandTest {
 
@@ -70,12 +71,12 @@ class SearchCommandTest {
 
         underTest.execute("search", "g:a");
 
-        var expected = """
+        var expected = Ansi.AUTO.string("""
                 Found 4
-                g:a:4                                                                                                          a day ago
-                g:a:3                                                                                                         3 days ago
-                g:a:2                                                                                                        3 years ago
-                g:a:1                                                                                                        6 years ago""";
+                g:a:4                                                                                                    @|fg(34)       a day ago|@
+                g:a:3                                                                                                    @|fg(34)      3 days ago|@
+                g:a:2                                                                                                    @|fg(178)     3 years ago|@
+                g:a:1                                                                                                    @|fg(238)     6 years ago|@""");
         var actual = out.toString();
 
         assertEquals(expected, actual);

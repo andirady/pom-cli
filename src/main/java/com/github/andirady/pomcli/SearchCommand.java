@@ -88,13 +88,11 @@ public class SearchCommand implements Runnable {
                     stream = stream.sorted(Comparator.comparingLong(Document::timestamp).reversed());
                 }
 
-                out.printf("%s", 
-                        stream.skip(i * 20)
-                              .limit(20)
-                              .map(d -> format(d))
-                              .collect(joining(System.lineSeparator()))
-                    );
-                
+                out.print(stream.skip(i * 20)
+                        .limit(20)
+                        .map(d -> format(d))
+                        .collect(joining(System.lineSeparator())));
+
                 remaining -= 20;
                 start += 20;
 
@@ -109,7 +107,7 @@ public class SearchCommand implements Runnable {
                     console.readLine("\r");
                 }
 
-                out.printf("\r");
+                out.print("\r");
             }
         }
     }
@@ -126,8 +124,8 @@ public class SearchCommand implements Runnable {
         }
 
         var result = String.format("%-104s @|fg(" + col + ") %15s|@",
-                             doc.id(),
-                             ageText);
+                doc.id(),
+                ageText);
         return Ansi.AUTO.string(result);
     }
 }
