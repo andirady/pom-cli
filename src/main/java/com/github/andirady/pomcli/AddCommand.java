@@ -161,12 +161,12 @@ public class AddCommand implements Runnable {
             writer.write(os, null, model);
             deps.forEach(d -> System.out.printf(
                     "%s %s%s added%s%n",
-                    switch (Objects.requireNonNullElse(d.getScope(), "compile")) {
+                    switch (d.getScope()) {
                         case "provided" -> "📦";
                         case "runtime" -> "🏃";
                         case "test" -> "🔬";
                         case "import" -> "🚢";
-                        default -> "🔨";
+                        case null, default -> "🔨";
                     },
                     coordString(d),
                     d.getVersion() instanceof String version
@@ -179,33 +179,10 @@ public class AddCommand implements Runnable {
     }
 
     void readParentPom(ModelReader reader) {
-        var parent = model.getParent();
-        if (parent == null) {
-            return;
-        }
-
-        var filename = "pom.xml";
-        var parentRelativePath = parent.getRelativePath();
-        var parentPomPath = pomPath.toAbsolutePath().getParent().resolve(parentRelativePath);
-        if (!parentPomPath.getFileName().toString().equals(filename)) {
-            parentPomPath = parentPomPath.resolve(filename);
-        }
-
-        LOG.fine("parentPomPath = " + parentPomPath);
-        // If the parent pom doesn't exists, tread the parent as remote parent.
-        if (!Files.exists(parentPomPath)) {
-            LOG.fine("Resolving the parent pom since the relative path does not exists");
-            isRemoteParent = true;
-            parentPom = ResolutionProvider.getInstance().readModel(parent.getGroupId(), parent.getArtifactId(),
-                    parent.getVersion());
-            return;
-        }
-
-        try (var is = Files.newInputStream(parentPomPath)) {
-            parentPom = reader.read(is, null);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        new ParentPomFinder(reader).find(pomPath, model).ifPresent(result -> {
+            isRemoteParent = result.remote();
+            parentPom = result.pom();
+        });
     }
 
     List<Dependency> getExistingDependencies() {

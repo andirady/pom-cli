@@ -21,20 +21,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
+
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
-import picocli.CommandLine.Help.Ansi;
 
 @Command(name = "id", description = "Sets the project ID")
 public class IdCommand implements Callable<Integer> {
 
     private static final Logger LOG = Logger.getLogger(IdCommand.class.getName());
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
 
     @Option(names = { "--as" })
     String as;
@@ -76,14 +81,14 @@ public class IdCommand implements Callable<Integer> {
         }
 
         var g = pom.getGroupId();
-        var v = pom.getVersion();
+        var v = getVersion(pom);
         var parent = pom.getParent();
         if (parent != null) {
             if (g == null) {
                 g = parent.getGroupId();
             }
             if (v == null) {
-                v = parent.getVersion();
+                v = getVersion(parent);
             }
         }
         return pom.getPackaging() + " " + g + ":" + pom.getArtifactId() + ":" + v;
@@ -138,6 +143,41 @@ public class IdCommand implements Callable<Integer> {
         if (".".equals(pom.getArtifactId())) {
             pom.setArtifactId(pomPath.toAbsolutePath().getParent().getFileName().toString());
         }
+    }
+
+    private String getVersion(Parent parent) {
+        var v = parent.getVersion();
+        if (v == null) {
+            return null;
+        }
+
+        var m = PLACEHOLDER_PATTERN.matcher(v);
+        if (m.matches()) {
+            return new ParentPomFinder(new DefaultModelReader(null))
+                    .find(pomPath, parent)
+                    .map(ParentPomFinder.Result::pom)
+                    .map(this::getVersion)
+                    .orElse(null);
+        }
+
+        return v;
+    }
+
+    private String getVersion(Model pom) {
+        var v = pom.getVersion();
+        if (v == null) {
+            return null;
+        }
+
+        var m = PLACEHOLDER_PATTERN.matcher(v);
+        if (m.matches()) {
+            var propKey = m.group(1);
+            var propValue = pom.getProperties().get(propKey);
+
+            return propValue.toString();
+        }
+
+        return v;
     }
 
 }
