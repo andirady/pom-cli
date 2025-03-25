@@ -36,11 +36,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.github.andirady.pomcli.impl.ConfigTestImpl;
 import com.github.andirady.pomcli.impl.GetJavaMajorVersionTestImpl;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
 
 class IdCommandTest extends BaseTest {
 
@@ -260,6 +262,62 @@ class IdCommandTest extends BaseTest {
         LOG.fine(Files.readString(pomPath));
 
         assertEquals("jar unnamed:b:0.0.1-SNAPSHOT", out.toString().trim());
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = ';', quoteCharacter = '"', value = {
+            """
+                    ;"<project>
+                      <groupId>g</groupId>
+                      <artifactId>a</artifactId>
+                      <version>${v}</version>
+                      <properties>
+                        <v>1.0.0</v>
+                      </properties>
+                    </project>";jar g:a:1.0.0""",
+            """
+                    "<project>
+                      <groupId>g-parent</groupId>
+                      <artifactId>a</artifactId>
+                      <version>${v}</version>
+                      <properties>
+                        <v>1.0.0</v>
+                      </properties>
+                    </project>";"<project>
+                      <parent>
+                        <groupId>g-parent</groupId>
+                        <artifactId>a</artifactId>
+                        <version>${v}</version>
+                      </parent>
+                      <artifactId>a-child</artifactId>
+                    </project>";jar g-parent:a-child:1.0.0"""
+    })
+    void shouldShowPropertyValueWhenVersionIsProperty(
+            String parentContent,
+            String content,
+            String expectedContent)
+            throws Exception {
+        var pomPath = projectPath.resolve("child").resolve("pom.xml");
+        var out = new StringWriter();
+        var underTest = new CommandLine(new Main());
+        underTest.setOut(new PrintWriter(out));
+
+        if (parentContent != null) {
+            Files.writeString(projectPath.resolve("pom.xml"), parentContent);
+        }
+
+        Files.createDirectories(pomPath.getParent());
+        Files.writeString(pomPath, content);
+
+        var ec = underTest.execute("id", "-f", pomPath.toString());
+        var actual = out.toString();
+        var expected = Ansi.AUTO.string("%s%n".formatted(expectedContent));
+
+        System.out.println(actual);
+
+        assertSame(0, ec);
+        assertEquals(expected, actual);
+
     }
 
     @AfterEach
