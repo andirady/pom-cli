@@ -102,6 +102,8 @@ public class SearchCommand implements Runnable {
                     break;
                 }
 
+                out.flush();
+
                 var console = System.console();
                 if (console != null) { // console can be null
                     console.readLine("\r");
