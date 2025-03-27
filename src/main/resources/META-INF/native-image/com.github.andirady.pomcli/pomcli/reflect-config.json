@@ -30,7 +30,10 @@
   "name":"com.github.andirady.pomcli.Main",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"setDebug","parameterTypes":["boolean"] }]}
+  "methods":[
+      {"name":"setDebug","parameterTypes":["boolean"] },
+      {"name":"setProfileId","parameterTypes":["java.lang.String"] }
+  ]}
 ,
 {
   "name":"com.github.andirady.pomcli.PlugCommand",
