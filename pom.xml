@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.andirady.pomcli</groupId>
   <artifactId>pomcli</artifactId>
@@ -15,8 +13,11 @@
     <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
     <picocli.version>4.7.4</picocli.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <executable-suffix></executable-suffix>
+    <dist-suffix>.zip</dist-suffix>
     <junit.version>5.9.3</junit.version>
     <jackson.version>2.14.1</jackson.version>
+    <jdk.version>22.0.1</jdk.version>
     <revision>0.9.4</revision>
   </properties>
   <dependencies>
@@ -86,6 +87,22 @@
     </dependency>
   </dependencies>
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.7.0</version>
+      </extension>
+    </extensions>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.jreleaser</groupId>
+          <artifactId>jreleaser-maven-plugin</artifactId>
+          <version>1.17.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
@@ -139,6 +156,61 @@
               <file>${project.basedir}/src/docs/license-header</file>
             </licenseHeader>
           </java>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jreleaser</groupId>
+        <artifactId>jreleaser-maven-plugin</artifactId>
+        <configuration>
+          <jreleaser>
+            <files>
+              <artifacts>
+                <artifact>
+                  <path>${project.build.directory}/distributions/${project.artifactId}-${project.version}-${os.detected.classifier}${dist-suffix}</path>
+                </artifact>
+              </artifacts>
+            </files>
+            <release>
+              <github>
+                <overwrite>true</overwrite>
+                <update>
+                  <enabled>true</enabled>
+                </update>
+              </github>
+            </release>
+          </jreleaser>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.4.2</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>${exec.mainClass}</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <executions>
+          <execution>
+            <id>make-distribution</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <attach>false</attach>
+          <appendAssemblyId>false</appendAssemblyId>
+          <finalName>${project.artifactId}-${project.version}-${os.detected.classifier}</finalName>
+          <outputDirectory>${project.build.directory}/distributions</outputDirectory>
+          <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+          <skipAssembly>true</skipAssembly>
         </configuration>
       </plugin>
     </plugins>
@@ -214,6 +286,46 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>dist</id>
+      <build>
+        <defaultGoal>assembly:single</defaultGoal>
+        <plugins>
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.7.1</version>
+            <configuration>
+              <skipAssembly>false</skipAssembly>
+              <descriptors>
+                <descriptor>src/main/assembly/assembly.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>linux</id>
+      <activation>
+        <os>
+          <family>linux</family>
+        </os>
+      </activation>
+      <properties>
+        <dist-suffix>.tar.gz</dist-suffix>
+      </properties>
+    </profile>
+    <profile>
+      <id>windows</id>
+      <activation>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <executable-suffix>.zip</executable-suffix>
+      </properties>
     </profile>
   </profiles>
 </project>
