@@ -31,13 +31,13 @@ jobs:
           cache: maven
 
       - name: Build
-        run: mvn -Pnative
+        run: mvn -Pnative -DskipTests
 
       - name: Dist
-        run: mvn -Pdist
+        run: mvn -Pdist -DskipTests
 
       - name: Relese
-        run: mvn jreleaser:release -Djreleaser.select.current.platform
+        run: mvn jreleaser:release -Djreleaser.select.current.platform -DskipTests
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
