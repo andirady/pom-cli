@@ -172,7 +172,6 @@
             </files>
             <release>
               <github>
-                <overwrite>true</overwrite>
                 <update>
                   <enabled>true</enabled>
                 </update>
@@ -324,7 +323,7 @@
         </os>
       </activation>
       <properties>
-        <executable-suffix>.zip</executable-suffix>
+        <executable-suffix>.exe</executable-suffix>
       </properties>
     </profile>
   </profiles>
