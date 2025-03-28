@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+    runs-on: ${{matrix.os}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: 24
+          components: native-image
+          cache: maven
+
+      - name: Setup Maven
+        uses: actions/setup-java@v4
+        with:
+          java-version: 24
+          cache: maven
+
+      - name: Build
+        run: mvn -Pnative
+
+      - name: Dist
+        run: mvn -Pdist
+
+      - name: Relese
+        run: mvn jreleaser:release -Djreleaser.select.current.platform
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
