@@ -37,7 +37,7 @@ jobs:
         run: mvn -Pdist -DskipTests
 
       - name: Relese
-        run: mvn jreleaser:release -Djreleaser.select.current.platform -DskipTests
+        run: mvn jreleaser:release -D"jreleaser.select.current.platform" -DskipTests
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
