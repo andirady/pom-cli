@@ -17,6 +17,7 @@ package com.github.andirady.pomcli;
 
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
@@ -28,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.stream.XMLInputFactory;
@@ -50,27 +52,36 @@ public class GetLatestVersion {
     }
 
     public Optional<String> execute(QuerySpec spec) {
+        return execute(spec, MAVEN_CENTRAL);
+    }
+
+    public Optional<String> execute(QuerySpec spec, URI repository) {
         if (spec.groupId() == null || spec.artifactId() == null) {
             throw new IllegalArgumentException("groupId and artifactId is required");
         }
 
         try {
-            var version = getLatest(MAVEN_CENTRAL, spec.groupId(), spec.artifactId(), true);
+            var version = getLatest(repository, spec.groupId(), spec.artifactId(), true);
             return Optional.ofNullable(version);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }
 
-    String getLatest(URI repository, String groupId, String artifactId, boolean release) throws Exception {
-        var uri = new URI(repository.getScheme(),
+    URI getMetadataUrl(URI repository, String groupId, String artifactId) throws URISyntaxException {
+        return new URI(repository.getScheme(),
                 repository.getAuthority(),
-                Path.of(repository.getPath())
-                        .resolve(Arrays.stream(groupId.split("\\.")).map(Path::of).reduce((a, b) -> a.resolve(b))
-                                .orElseThrow()
-                                .resolve(Path.of(artifactId, "maven-metadata.xml")))
-                        .toString(),
+                Stream.of(
+                        Stream.of(repository.getPath().replaceAll("/$", "")),
+                        Arrays.stream(groupId.split("\\.")),
+                        Stream.of(artifactId, "maven-metadata.xml"))
+                        .flatMap(p -> p)
+                        .collect(Collectors.joining("/")),
                 null, null);
+    }
+
+    String getLatest(URI repository, String groupId, String artifactId, boolean release) throws Exception {
+        var uri = getMetadataUrl(repository, groupId, artifactId);
         LOG.fine(() -> "uri = " + uri);
         var t0 = System.currentTimeMillis();
         var request = HttpRequest.newBuilder(uri).GET().build();
