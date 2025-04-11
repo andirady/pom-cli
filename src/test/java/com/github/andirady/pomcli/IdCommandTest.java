@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -237,7 +238,7 @@ class IdCommandTest extends BaseTest {
         underTest.execute("id", "-f", pomPath.toString(), ".");
         LOG.fine(Files.readString(pomPath));
 
-        var expr = "/project/parent[groupId='a' and artifactId='a' and version='1' and relativePath='../..']";
+        var expr = "/project/parent[groupId='a' and artifactId='a' and version='1' and relativePath='.." + FileSystems.getDefault().getSeparator() + "..']";
         assertXpath(pomPath, expr, 1);
         assertEquals("jar a:c:1", out.toString().trim());
     }

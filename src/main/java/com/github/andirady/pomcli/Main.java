@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -113,16 +114,20 @@ public class Main {
     }
 
     static Dependency stringToDependency(String s) {
-        var path = Path.of(s);
-        if (Files.isRegularFile(path)) {
-            var filename = path.getFileName().toString();
-            if (filename.endsWith(".jar")) {
-                return readCoordFromJarFile(path);
-            } else if (filename.endsWith(".xml")) {
-                return readCoordFromPomFile(path);
+        try {
+            var path = Path.of(s);
+            if (Files.isRegularFile(path)) {
+                var filename = path.getFileName().toString();
+                if (filename.endsWith(".jar")) {
+                    return readCoordFromJarFile(path);
+                } else if (filename.endsWith(".xml")) {
+                    return readCoordFromPomFile(path);
+                }
+            } else if (Files.isDirectory(path)) {
+                return readCoordFromPomFile(path.resolve("pom.xml"));
             }
-        } else if (Files.isDirectory(path)) {
-            return readCoordFromPomFile(path.resolve("pom.xml"));
+        } catch (InvalidPathException ignored) {
+
         }
 
         var d = new Dependency();

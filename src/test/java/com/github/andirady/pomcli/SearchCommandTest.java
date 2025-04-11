@@ -15,7 +15,7 @@
  */
 package com.github.andirady.pomcli;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -79,6 +79,6 @@ class SearchCommandTest {
                 g:a:1                                                                                                    @|fg(238)     6 years ago|@""");
         var actual = out.toString();
 
-        assertEquals(expected, actual);
-	}
+        assertLinesMatch(expected.lines(), actual.lines());
+    }
 }
