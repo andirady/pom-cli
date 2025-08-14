@@ -180,6 +180,16 @@ pom get maven.compiler.source
 pom -P test get maven.compiler.source
 ```
 
+### Removing properties
+
+```bash
+# Remove from default profile
+pom unset property_name
+
+# Remove from specific profile
+pom -P test unset property_name
+```
+
 ### Search
 
 ```bash
