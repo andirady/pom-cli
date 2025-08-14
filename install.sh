@@ -24,7 +24,7 @@ if [ ! -f $archive_name ]; then
     exit 1
 fi
 
-mkdir -p $prefix/bin
+mkdir -p $PREFIX/bin
 tar xzf $archive_name -C $PREFIX/bin/ $dist_name/bin/pom --strip-components=2
 tar xzf $archive_name -C $PREFIX/share/pom-cli/ $dist_name/LICENSE.txt --strip-components=1
 
