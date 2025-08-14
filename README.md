@@ -21,6 +21,20 @@ pom add org.apache.logging.log4j:log4j-api
 mvn package
 ```
 
+## Installation
+
+### Unix-like
+
+Run the following script:
+
+```
+curl -s https://raw.githubusercontent.com/andirady/pom-cli/refs/heads/main/install.sh | bash
+```
+
+### Others
+
+Download the binaries from the [Releases](https://github.com/andirady/pom-cli/releases) page.
+
 ## Usage
 
 ### Setting project ID
