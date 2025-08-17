@@ -460,7 +460,9 @@ class AddCommandTest extends BaseTest {
     void shouldSuccesfullyAddOptional() throws IOException {
         var pomPath = tempDir.resolve("pom.xml");
         underTest.execute("add", "-f", pomPath.toString(), "--optional", "g:a:1.0.0");
-        assertXpath(pomPath, "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0' and optional='true']", 1);
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0' and optional='true']",
+                1);
     }
 
     @Test
@@ -476,6 +478,44 @@ class AddCommandTest extends BaseTest {
                 """);
         var ec = underTest.execute("add", "-f", pomPath.toString(), "--optional", "g:a:1.0.0");
         assertNotSame(0, ec);
+    }
+
+    @ParameterizedTest
+    @CsvSource(textBlock = """
+            b,groupId='*' and artifactId='b'
+            hello:world,groupId='hello' and artifactId='world'
+            """)
+    void shouldAddSingleExclusion(String excludes, String predicate) throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
+        writeString(pomPath, """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.example</groupId>
+                    <artifactId>hello-app</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        underTest.execute("add", "-f", pomPath.toString(), "g:a:1.0.0", "--excludes", excludes);
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']/exclusions/exclusion[%s]"
+                        .formatted(predicate),
+                1, predicate);
+    }
+
+    @Test
+    void shouldAddMultipleExclusions() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
+        writeString(pomPath, """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.example</groupId>
+                    <artifactId>hello-app</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        underTest.execute("add", "-f", pomPath.toString(), "g:a:1.0.0", "--excludes", "g:b,g:c");
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']/exclusions/exclusion", 2);
     }
 
     @FunctionalInterface

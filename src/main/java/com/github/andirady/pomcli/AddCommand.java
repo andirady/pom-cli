@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.io.DefaultModelReader;
@@ -95,6 +96,12 @@ public class AddCommand implements Runnable {
             a directory, pom.xml, or a jar file.""")
     List<Dependency> coords;
 
+    @Option(names = { "-e",
+            "--excludes" }, split = ",", defaultValue = "", paramLabel = "[GROUP_ID:]ARTIFACT_ID[:VERSION]", description = """
+                    Comma-separated list of exclusions
+                    """)
+    List<String> excludes;
+
     @Spec
     CommandSpec spec;
 
@@ -129,7 +136,7 @@ public class AddCommand implements Runnable {
             throw new IllegalArgumentException("Duplicate artifact(s): " + duplicates);
         }
 
-        var stream = coords.stream().parallel().map(this::ensureVersion);
+        var stream = coords.stream().parallel().map(this::ensureVersion).map(this::addExclusions);
 
         // Add the scope element if the scope is not compile scope.
         if (scope != null && !scope.compile) {
@@ -281,6 +288,24 @@ public class AddCommand implements Runnable {
         return d.getGroupId() + ":"
                 + d.getArtifactId()
                 + Optional.ofNullable(d.getClassifier()).map(":"::concat).orElse("");
+    }
+
+    Dependency addExclusions(Dependency dependency) {
+        excludes.stream().forEach(a -> {
+            var d = Main.stringToDependency(a);
+            var e = new Exclusion();
+
+            if (d.getGroupId() instanceof String g) {
+                e.setGroupId(g);
+            } else {
+                e.setGroupId("*"); // wildcard exclusion. See MNG-3832
+            }
+            e.setArtifactId(d.getArtifactId());
+
+            dependency.addExclusion(e);
+        });
+
+        return dependency;
     }
 
 }
