@@ -47,8 +47,8 @@ public class NewPom {
             parent.setArtifactId(parentPom.model().getArtifactId());
             parent.setVersion(parentPom.model().getVersion());
             var relativePath = pomPath.toAbsolutePath()
-                                      .getParent()
-                                      .relativize(parentPom.path().getParent()).toString();
+                    .getParent()
+                    .relativize(parentPom.path().getParent()).toString();
             if (!"..".equals(relativePath)) {
                 parent.setRelativePath(relativePath);
             }
@@ -59,15 +59,16 @@ public class NewPom {
             // Use UTF-8 for default encoding.
             props.setProperty("project.build.sourceEncoding", "UTF-8");
 
-            var majorVersion = GetJavaMajorVersion.getInstance().get(); 
-            if (Double.parseDouble(majorVersion) < 9) {
-                props.setProperty("maven.compiler.source", majorVersion);
-                props.setProperty("maven.compiler.target", majorVersion);
-            } else {
-                props.setProperty("maven.compiler.release", majorVersion);
+            GetJavaMajorVersion.getInstance().get().ifPresent(majorVersion -> {
+                if (Double.parseDouble(majorVersion) < 9) {
+                    props.setProperty("maven.compiler.source", majorVersion);
+                    props.setProperty("maven.compiler.target", majorVersion);
+                } else {
+                    props.setProperty("maven.compiler.release", majorVersion);
 
-                new AddPlugin().addPlugin(model, "maven-compiler-plugin");
-            }
+                    new AddPlugin().addPlugin(model, "maven-compiler-plugin");
+                }
+            });
         }
 
         model.setVersion("0.0.1-SNAPSHOT");
@@ -79,7 +80,6 @@ public class NewPom {
 
         return model;
     }
-
 
     private ParentPom findParentPom(Path pomPath, ModelReader pomReader) {
         var parent = pomPath.toAbsolutePath().getParent();
