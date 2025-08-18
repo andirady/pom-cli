@@ -17,6 +17,7 @@ package com.github.andirady.pomcli;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +30,7 @@ public interface GetJavaMajorVersion {
         return ServiceLoader.load(GetJavaMajorVersion.class).findFirst().orElseThrow(); 
     }
 
-    default String get() {
+    default Optional<String> get() {
         try (
             var br = getBufferedReader();
         ) {
@@ -40,10 +41,9 @@ public interface GetJavaMajorVersion {
                      .map(m -> {
                          var i = m.group(1);
                          return "1".equals(i) ? (i + m.group(3)) : i;
-                     })
-                     .orElseThrow();
+                     });
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            return Optional.empty();
         }
     }
 
