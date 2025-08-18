@@ -1,5 +1,5 @@
 /**
- * Copyright 2021-2024 Andi Rady Kurniawan
+ * Copyright 2021-2025 Andi Rady Kurniawan
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import com.github.andirady.pomcli.impl.ConfigTestImpl;
 import com.github.andirady.pomcli.impl.GetJavaMajorVersionTestImpl;
