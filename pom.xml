@@ -9,7 +9,7 @@
     <url>https://github.com/andirady/pom-cli.git</url>
   </scm>
   <properties>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>24</maven.compiler.release>
     <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
     <picocli.version>4.7.4</picocli.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -17,7 +17,7 @@
     <dist-suffix>.zip</dist-suffix>
     <junit.version>5.9.3</junit.version>
     <jackson.version>2.14.1</jackson.version>
-    <jdk.version>22.0.1</jdk.version>
+    <jdk.version>24.0.0</jdk.version>
     <revision>0.9.5</revision>
   </properties>
   <dependencies>

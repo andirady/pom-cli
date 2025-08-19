@@ -20,15 +20,19 @@ jobs:
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: 24
-          components: native-image
           cache: maven
+
+      - uses: actions/cache@v4.2.3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
 
       - name: Setup Maven
         uses: actions/setup-java@v4
         with:
           java-version: 24
           distribution: temurin
-          cache: maven
 
       - name: Build
         run: mvn -Pnative -DskipTests
@@ -36,7 +40,7 @@ jobs:
       - name: Dist
         run: mvn -Pdist -DskipTests
 
-      - name: Relese
+      - name: Release
         run: mvn jreleaser:release -D"jreleaser.select.current.platform" -DskipTests
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
