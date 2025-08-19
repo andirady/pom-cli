@@ -4,22 +4,7 @@
 
 **pom-cli** lets you quickly create a ``pom.xml`` file as well as update it without manually editing the file. It's written in Java and compiled to native code with the help of [graalvm](https://www.graalvm.org/).
 
-Example flow:
-
-```bash
-# Change to the project directory
-cd my_app
-# Create folders
-mkdir -p src/main/java/unnamed/my_app
-# Creat a pom.xml with groupdId `unnamed`, artifactID `my_app` (the same as the folder name) and version `0.0.1-SNAPSHOT`.
-# The pom.xml will have the `maven.compiler.source` and `maven.compiler.target` or `maven.compiler.release` set to the `java` version available in `$PATH`
-# The `project.build.sourceEncoding` will also be set to UTF-8.
-pom id .
-# Add latest log4j-api as compile dependency
-pom add org.apache.logging.log4j:log4j-api
-# Create a simple java and run
-mvn package
-```
+![Demo for spring-boot](docs/assets/terminal-recording.gif)
 
 ## Installation
 
