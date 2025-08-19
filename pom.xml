@@ -258,7 +258,7 @@
               </execution>
             </executions>
             <configuration>
-              <imageName>pom-${version}</imageName>
+              <imageName>pom-${project.version}</imageName>
               <mainClass>${exec.mainClass}</mainClass>
             </configuration>
           </plugin>
