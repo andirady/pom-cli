@@ -1,3 +1,5 @@
+v=0.9.5
+
 pwd=$PWD
 workdir=$HOME/.cache/pom-cli
 
@@ -12,7 +14,6 @@ fi
 mkdir -p $workdir
 cd $workdir
 
-v=0.9.4
 dist_name="pomcli-${v}-linux-x86_64"
 archive_name="${dist_name}.tar.gz"
 
