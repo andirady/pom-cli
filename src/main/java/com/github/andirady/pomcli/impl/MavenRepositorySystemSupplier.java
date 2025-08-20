@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.andirady.pomcli.aether;
+package com.github.andirady.pomcli.impl;
 
 import java.util.Map;
 

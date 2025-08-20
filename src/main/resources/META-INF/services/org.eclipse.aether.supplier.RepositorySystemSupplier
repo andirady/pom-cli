@@ -1,1 +1,1 @@
-com.github.andirady.pomcli.aether.MavenRepositorySystemSupplier
+com.github.andirady.pomcli.impl.MavenRepositorySystemSupplier
