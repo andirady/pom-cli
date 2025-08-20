@@ -16,7 +16,7 @@ Run the following script:
 curl -s https://raw.githubusercontent.com/andirady/pom-cli/refs/heads/main/install.sh | bash
 ```
 
-### Others
+### MacOS, Windows
 
 Download the binaries from the [Releases](https://github.com/andirady/pom-cli/releases) page.
 
