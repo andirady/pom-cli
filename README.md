@@ -20,6 +20,14 @@ curl -s https://raw.githubusercontent.com/andirady/pom-cli/refs/heads/main/insta
 
 Download the binaries from the [Releases](https://github.com/andirady/pom-cli/releases) page.
 
+### Docker
+
+You can also run pom-cli using Docker:
+
+```bash
+docker run --rm -it --user $(id -u):$(id -g) -v $PWD:/workspace ghcr.io/andirady/pom-cli [ARGS...]
+```
+
 ## Usage
 
 ### Setting project ID
