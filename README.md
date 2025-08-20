@@ -164,6 +164,33 @@ pom remove artifactId
 pom rm artifactId
 ```
 
+### Setting parent POM
+
+You can set the parent POM for your project using either a path to an existing parent project or by specifying the Maven coordinates.
+
+If you set a parent, subsequent commands (such as `pom add` or `pom plug`) will properly manage dependencies and plugins according to the parent POM’s configuration.
+
+#### Set parent by local path
+```bash
+# Parent is parent directory
+pom parent ..
+# Parent is in another directory of the parent directory
+pom parent ../parent
+# Parent is in a separate directory tree
+pom parent /path/to/parent
+```
+This will set the `<parent>` element in your `pom.xml` to reference the specified parent project's POM file.
+If the version of the parent was updated, calling this again will update the `<version>` of the `<parent>`.
+
+#### Set parent by Maven coordinates:
+```bash
+# Use latest version
+pom parent groupId:artifactId
+# Use specific version
+pom parent groupId:artifactId:version
+```
+This will set the `<parent>` element in your `pom.xml` using the given group ID, artifact ID, and version.
+
 ### Setting properties
 
 ```bash
