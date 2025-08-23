@@ -36,19 +36,33 @@ public class NewPom {
     public Model newPom(Path pomPath, boolean standalone) {
         var model = new Model();
         model.setModelVersion("4.0.0");
-        ParentPom parentPom = null;
-        if (!standalone) {
-            parentPom = findParentPom(pomPath, new DefaultModelReader(null));
-        }
 
-        if (parentPom != null) {
+        if (!standalone && findParentPom(pomPath,
+                new DefaultModelReader(null)) instanceof ParentPom(Path parentPath, Model parentModel)) {
+
+            var parentGroupId = parentModel.getGroupId();
+            var parentVersion = parentModel.getVersion();
+
+            if (parentGroupId == null) {
+                parentGroupId = parentModel.getParent() instanceof Parent p ? p.getGroupId() : null;
+            }
+
+            if (parentVersion == null) {
+                parentVersion = parentModel.getParent() instanceof Parent p ? p.getVersion() : null;
+            }
+
+            if (parentGroupId == null || parentVersion == null) {
+                throw new IllegalStateException(
+                        "Tried to set %s as parent, but it's missing groupId and version".formatted(parentPath));
+            }
+
             var parent = new Parent();
-            parent.setGroupId(parentPom.model().getGroupId());
-            parent.setArtifactId(parentPom.model().getArtifactId());
-            parent.setVersion(parentPom.model().getVersion());
+            parent.setGroupId(parentGroupId);
+            parent.setArtifactId(parentModel.getArtifactId());
+            parent.setVersion(parentVersion);
             var relativePath = pomPath.toAbsolutePath()
                     .getParent()
-                    .relativize(parentPom.path().getParent()).toString();
+                    .relativize(parentPath.getParent()).toString();
             if (!"..".equals(relativePath)) {
                 parent.setRelativePath(relativePath);
             }
