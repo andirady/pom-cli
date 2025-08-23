@@ -72,7 +72,7 @@ public class NewPom {
         }
 
         model.setVersion("0.0.1-SNAPSHOT");
-        model.setArtifactId(Path.of(System.getProperty("user.dir")).getFileName().toString());
+        model.setArtifactId(pomPath.getParent().getFileName().toString());
         if (model.getParent() == null) {
             model.setGroupId(Config.getInstance().getDefaultGroupId());
             model.setVersion("0.0.1-SNAPSHOT");
