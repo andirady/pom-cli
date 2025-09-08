@@ -317,7 +317,21 @@ class IdCommandTest extends BaseTest {
 
         assertSame(0, ec);
         assertEquals(expected, actual);
+    }
 
+    @Test
+    void shouldAcceptDirectoryAsPomPath() {
+        var pomPath = projectPath;
+        var out = new StringWriter();
+        var underTest = new CommandLine(new Main());
+        underTest.setOut(new PrintWriter(out));
+
+        var ec = underTest.execute("id", "-f", pomPath.toString(), "g:a:v");
+        var actual = out.toString();
+
+        System.out.println(actual);
+
+        assertSame(0, ec);
     }
 
     @AfterEach

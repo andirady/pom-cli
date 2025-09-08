@@ -58,6 +58,11 @@ public class IdCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        if (Files.isDirectory(pomPath)) {
+            pomPath = pomPath.resolve("pom.xml");
+            return call();
+        }
+
         if (id != null) {
             updatePom();
         } else if (Files.notExists(pomPath)) {
