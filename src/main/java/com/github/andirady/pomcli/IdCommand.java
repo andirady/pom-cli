@@ -17,6 +17,7 @@ package com.github.andirady.pomcli;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
@@ -35,7 +36,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
-@Command(name = "id", description = "Sets the project ID")
+@Command(name = "id", description = "Returns or sets the project ID")
 public class IdCommand implements Callable<Integer> {
 
     private static final Logger LOG = Logger.getLogger(IdCommand.class.getName());
@@ -44,7 +45,8 @@ public class IdCommand implements Callable<Integer> {
     @Option(names = { "--as" })
     String as;
 
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
+    @Option(names = { "-f",
+            "--file" }, defaultValue = "pom.xml", order = 0, description = "Path to pom.xml. Can be a regular file, a directory, or a jar file (readonly)")
     Path pomPath;
 
     @Option(names = { "-s", "--standalone" }, description = "Don't search for parent pom")
@@ -56,17 +58,38 @@ public class IdCommand implements Callable<Integer> {
     @Spec
     CommandSpec spec;
 
+    private boolean readOnly = false;
+
     @Override
     public Integer call() {
+        pomPath = pomPath.startsWith("~")
+                ? Path.of(System.getProperty("user.home")).resolve(pomPath.subpath(1, pomPath.getNameCount()))
+                : pomPath;
+
         if (Files.isDirectory(pomPath)) {
             pomPath = pomPath.resolve("pom.xml");
-            return call();
+        } else if (Files.isRegularFile(pomPath) && pomPath.getFileName().toString().endsWith(".jar")) {
+            try {
+                var zipfs = FileSystems.newFileSystem(pomPath);
+                pomPath = Files.walk(zipfs.getPath("META-INF", "maven"))
+                        .filter(p -> p.getFileName().toString().equals("pom.xml"))
+                        .filter(Files::isRegularFile)
+                        .findFirst()
+                        .orElseThrow(() -> new IOException("No maven metadata"));
+
+                readOnly = true;
+            } catch (IOException e) {
+                spec.commandLine().getErr()
+                        .println(Ansi.AUTO.string("@|bold,fg(red) Fail to read:|@ @|fg(red) %s|@"
+                                .formatted(e.getMessage())));
+                return 1;
+            }
         }
 
         if (id != null) {
             updatePom();
         } else if (Files.notExists(pomPath)) {
-            spec.commandLine().getOut()
+            spec.commandLine().getErr()
                     .println(Ansi.AUTO.string("@|bold,fg(red) No such file:|@ @|fg(red) " + pomPath + "|@"));
             return 1;
         }
@@ -100,6 +123,10 @@ public class IdCommand implements Callable<Integer> {
     }
 
     private void updatePom() {
+        if (readOnly) {
+            throw new UnsupportedOperationException("Can't write to " + pomPath.toUri());
+        }
+
         Model pom;
         var reader = new DefaultModelReader(null);
         if (Files.exists(pomPath)) {
