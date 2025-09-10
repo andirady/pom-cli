@@ -82,7 +82,8 @@ public class AddCommand implements Runnable {
         }
     }
 
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml", order = 0)
+    @Option(names = { "-f",
+            "--file" }, defaultValue = "pom.xml", order = 0, description = "Path to pom.xml. Can be a regular file or a directory")
     Path pomPath;
 
     @ArgGroup(exclusive = true, multiplicity = "0..1", order = 1)
@@ -111,6 +112,14 @@ public class AddCommand implements Runnable {
 
     @Override
     public void run() {
+        pomPath = pomPath.startsWith("~")
+                ? Path.of(System.getProperty("user.home")).resolve(pomPath.subpath(1, pomPath.getNameCount()))
+                : pomPath;
+
+        if (Files.isDirectory(pomPath)) {
+            pomPath = pomPath.resolve("pom.xml");
+        }
+
         var reader = new DefaultModelReader(null);
         if (Files.exists(pomPath)) {
             try (var is = Files.newInputStream(pomPath)) {
