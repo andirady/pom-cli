@@ -168,7 +168,8 @@ class AddCommandTest extends BaseTest {
         var projectDir = createDirectory(tempDir.resolve("project"));
 
         var jarPath = libDir.resolve("a.jar");
-        try (var zip = new ZipOutputStream(Files.newOutputStream(jarPath))) {
+        // Create a blank jar
+        try (var _ = new ZipOutputStream(Files.newOutputStream(jarPath))) {
         }
 
         var ec = underTest.execute("add", "-f", projectDir.resolve("pom.xml").toString(), jarPath.toString());
@@ -520,8 +521,8 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    void shouldAcceptDirectoryAsPomPath() throws IOException {
-        var projectDir = tempDir;
+    void shouldAcceptDirectoryAsPomPath() throws Exception {
+        var projectDir = createDirectory(tempDir.resolve("project"));
         var pomPath = projectDir.resolve("pom.xml");
         writeString(pomPath, """
                 <project>
@@ -531,10 +532,22 @@ class AddCommandTest extends BaseTest {
                     <version>1.0.0</version>
                 </project>
                 """);
-        underTest.execute("add", "-f", projectDir.toString(), "g:a:1.0.0", "--excludes", "g:b,g:c");
+        var ec = underTest.execute("add", "-f", projectDir.toString(), "g:a:1.0.0");
+        assertSame(0, ec);
         assertXpath(pomPath,
-                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']/exclusions/exclusion",
-                2);
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']",
+                1);
+    }
+
+    @Test
+    void shouldAcceptDirectoryAsPomPathAndCreatePomIfNotExists() throws Exception {
+        var projectDir = createDirectory(tempDir.resolve("project"));
+        var pomPath = projectDir.resolve("pom.xml");
+        var ec = underTest.execute("add", "-f", projectDir.toString(), "g:a:1.0.0");
+        assertSame(0, ec);
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']",
+                1);
     }
 
     @FunctionalInterface
