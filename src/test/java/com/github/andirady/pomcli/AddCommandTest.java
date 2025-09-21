@@ -515,7 +515,26 @@ class AddCommandTest extends BaseTest {
                 """);
         underTest.execute("add", "-f", pomPath.toString(), "g:a:1.0.0", "--excludes", "g:b,g:c");
         assertXpath(pomPath,
-                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']/exclusions/exclusion", 2);
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']/exclusions/exclusion",
+                2);
+    }
+
+    @Test
+    void shouldAcceptDirectoryAsPomPath() throws IOException {
+        var projectDir = tempDir;
+        var pomPath = projectDir.resolve("pom.xml");
+        writeString(pomPath, """
+                <project>
+                    <modelVersion>4.0.0</modelVersion>
+                    <groupId>com.example</groupId>
+                    <artifactId>hello-app</artifactId>
+                    <version>1.0.0</version>
+                </project>
+                """);
+        underTest.execute("add", "-f", projectDir.toString(), "g:a:1.0.0", "--excludes", "g:b,g:c");
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']/exclusions/exclusion",
+                2);
     }
 
     @FunctionalInterface

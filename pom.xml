@@ -11,6 +11,7 @@
   <properties>
     <maven.compiler.release>24</maven.compiler.release>
     <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
+    <exec.arguments>${args}</exec.arguments>
     <picocli.version>4.7.4</picocli.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <executable-suffix></executable-suffix>

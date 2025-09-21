@@ -317,7 +317,53 @@ class IdCommandTest extends BaseTest {
 
         assertSame(0, ec);
         assertEquals(expected, actual);
+    }
 
+    @Test
+    void shouldAcceptDirectoryAsPomPath() {
+        var pomPath = projectPath;
+        var out = new StringWriter();
+        var underTest = new CommandLine(new Main());
+        underTest.setOut(new PrintWriter(out));
+
+        var ec = underTest.execute("id", "-f", pomPath.toString(), "g:a:v");
+        var actual = out.toString();
+
+        System.out.println(actual);
+
+        assertSame(0, ec);
+    }
+
+    @Test
+    void shouldAcceptJarAsPomPath() throws IOException {
+        var pomPath = projectPath.resolve("example.jar");
+
+        try (var os = Files.newOutputStream(pomPath);
+                var jar = new java.util.jar.JarOutputStream(os)) {
+            var entry = new java.util.jar.JarEntry("META-INF/maven/g/a/pom.xml");
+            jar.putNextEntry(entry);
+            jar.write("""
+                    <project xmlns="http://maven.apache.org/POM/4.0.0"
+                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+                      <modelVersion>4.0.0</modelVersion>
+                      <groupId>g</groupId>
+                      <artifactId>a</artifactId>
+                      <version>v</version>
+                    </project>
+                    """.getBytes());
+            jar.closeEntry();
+        }
+
+        var out = new StringWriter();
+        var underTest = new CommandLine(new Main());
+        underTest.setOut(new PrintWriter(out));
+
+        var ec = underTest.execute("id", "-f", pomPath.toString());
+        var actual = out.toString();
+
+        assertSame(0, ec);
+        assertEquals("jar g:a:v%n".formatted(), actual);
     }
 
     @AfterEach
