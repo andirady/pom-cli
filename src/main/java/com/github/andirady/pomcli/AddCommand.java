@@ -18,7 +18,6 @@ package com.github.andirady.pomcli;
 import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Exclusion;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
-import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
 import org.apache.maven.model.io.ModelReader;
 
@@ -46,7 +44,7 @@ import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Spec;
 
 @Command(name = "add", sortOptions = false, description = "Add dependencies")
-public class AddCommand implements Runnable {
+public class AddCommand extends ReadingOptions implements Runnable {
 
     private static final Logger LOG = Logger.getLogger("add");
 
@@ -82,10 +80,6 @@ public class AddCommand implements Runnable {
         }
     }
 
-    @Option(names = { "-f",
-            "--file" }, defaultValue = "pom.xml", order = 0, description = "Path to pom.xml. Can be a regular file or a directory")
-    Path pomPath;
-
     @ArgGroup(exclusive = true, multiplicity = "0..1", order = 1)
     Scope scope;
 
@@ -112,27 +106,11 @@ public class AddCommand implements Runnable {
 
     @Override
     public void run() {
-        pomPath = pomPath.startsWith("~")
-                ? Path.of(System.getProperty("user.home")).resolve(pomPath.subpath(1, pomPath.getNameCount()))
-                : pomPath;
-
-        if (Files.isDirectory(pomPath)) {
-            pomPath = pomPath.resolve("pom.xml");
-        }
-
-        var reader = new DefaultModelReader(null);
-        if (Files.exists(pomPath)) {
-            try (var is = Files.newInputStream(pomPath)) {
-                model = reader.read(is, null);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        } else {
-            System.err.println(pomPath + " does not exists. Creating a new one");
-            model = new NewPom().newPom(pomPath);
-        }
-
-        readParentPom(reader);
+        model = getPom().orElseGet(() -> {
+            spec.commandLine().getErr().println(pomPath + " does not exists. Creating a new one");
+            return new NewPom().newPom(getPomFilePath());
+        });
+        readParentPom(getPomReader());
 
         var existing = getExistingDependencies();
         LOG.fine("Checking for duplicates");
@@ -173,7 +151,7 @@ public class AddCommand implements Runnable {
         existing.addAll(deps);
 
         var writer = new DefaultModelWriter();
-        try (var os = Files.newOutputStream(pomPath)) {
+        try (var os = Files.newOutputStream(getPomFilePath())) {
             writer.write(os, null, model);
             deps.forEach(d -> System.out.printf(
                     "%s %s%s added%s%n",

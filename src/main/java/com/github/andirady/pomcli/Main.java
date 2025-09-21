@@ -61,7 +61,7 @@ public class Main {
 
     static CommandLine createCommandLine(Main app) {
         var cli = new CommandLine(app);
-        cli.setExecutionExceptionHandler((e, cmd, parseResult) -> {
+        cli.setExecutionExceptionHandler((e, cmd, _) -> {
             var msg = e.getMessage();
             if (msg == null) {
                 e.printStackTrace();
