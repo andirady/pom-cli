@@ -15,12 +15,6 @@
  */
 package com.github.andirady.pomcli.solrsearch;
 
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-import com.github.andirady.pomcli.SearchProvider;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -38,7 +32,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-public class SolrSearch implements SearchProvider {
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+import com.github.andirady.pomcli.SearchProvider;
+
+public class SolrSearchProvider implements SearchProvider {
 
     private static final ObjectMapper OM = JsonMapper.builder().addModule(new AfterburnerModule()).build();
     private static final HttpClient httpClient = HttpClient.newHttpClient();
@@ -48,8 +47,8 @@ public class SolrSearch implements SearchProvider {
         var httpReq = HttpRequest.newBuilder(makeUri(req)).GET()
                 .headers("Accept", "application/json", "Accept-Encoding", "gzip").build();
         try {
-            var httpResp = httpClient.send(httpReq, this::gzipBodyHandler);
-            return httpResp.body().get();
+            var httpResp = httpClient.send(httpReq, this::bodyHandler);
+            return httpResp.body();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (InterruptedException e) {
@@ -58,34 +57,37 @@ public class SolrSearch implements SearchProvider {
         }
     }
 
-    private BodySubscriber<java.util.function.Supplier<SolrSearchResult>> gzipBodyHandler(HttpResponse.ResponseInfo respInfo) {
+    private BodySubscriber<SolrSearchResult> bodyHandler(HttpResponse.ResponseInfo respInfo) {
         var sc = respInfo.statusCode();
         if (sc != 200) {
             throw new IllegalStateException("Server returns error: statusCode=" + sc);
         }
 
         var contEnc = respInfo.headers().firstValue("Content-Encoding");
-        if (!contEnc.filter("gzip"::equals).isPresent()) {
-            throw new IllegalStateException("Server returns unexpected encoding: " + contEnc.orElse(""));
-        }
-
         var upstream = HttpResponse.BodySubscribers.ofInputStream();
-        return BodySubscribers.mapping(upstream, is -> () -> {
-            try (
-                var stream = is;
-                var gis = new GZIPInputStream(stream);
-            ) {
-                return OM.readValue(gis, SolrSearchResult.class);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
+
+        return BodySubscribers.mapping(upstream, contEnc.filter("gzip"::equals).isPresent()
+                ? is -> {
+                    try (var gis = new GZIPInputStream(is)) {
+                        return OM.readValue(gis, SolrSearchResult.class);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+                : is -> {
+                    try (is) {
+                        return OM.readValue(is, SolrSearchResult.class);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                });
     }
 
     private URI makeUri(SolrSearchRequest req) {
+        var query = Arrays.stream(SolrSearchRequest.class.getRecordComponents()).map(toKeyValue(req))
+                .filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining("&"));
+
         try {
-            var query = Arrays.stream(SolrSearchRequest.class.getRecordComponents()).map(toKeyValue(req))
-                    .filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining("&"));
             return new URI("https", "search.maven.org", "/solrsearch/select", query, null);
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
