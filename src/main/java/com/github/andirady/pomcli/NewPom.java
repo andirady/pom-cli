@@ -37,6 +37,14 @@ public class NewPom {
         var model = new Model();
         model.setModelVersion("4.0.0");
 
+        if (pomPath.getParent() == null) {
+            pomPath = Path.of(System.getProperty("user.dir")).resolve(pomPath);
+            // If root, the fileName will remain null, so throw
+            if (pomPath.getFileName() == null) {
+                throw new IllegalArgumentException("Path not allowed: " + pomPath);
+            }
+        }
+
         if (!standalone && findParentPom(pomPath,
                 new DefaultModelReader(null)) instanceof ParentPom(Path parentPath, Model parentModel)) {
 
