@@ -61,6 +61,20 @@ class BaseTest {
         }
     }
 
+    Path makeMavenJar(Path path, String content) {
+        try (var os = Files.newOutputStream(path);
+                var jar = new java.util.jar.JarOutputStream(os)) {
+            var entry = new java.util.jar.JarEntry("META-INF/maven/g/a/pom.xml");
+            jar.putNextEntry(entry);
+            jar.write(content.getBytes());
+            jar.closeEntry();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        return path;
+    }
+
     private int evalXpath(Path pomPath, String expr) {
         try (var is = Files.newInputStream(pomPath)) {
             var dbf = DocumentBuilderFactory.newInstance();

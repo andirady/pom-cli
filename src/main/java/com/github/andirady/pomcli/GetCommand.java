@@ -26,7 +26,7 @@ import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
 
 @Command(name = "get", description = "Get properties")
-public class GetCommand extends ReadingOptions implements Runnable {
+public class GetCommand extends JarSupportedReadingOptions implements Runnable {
 
     @Parameters(arity = "1")
     String property;
