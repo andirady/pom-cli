@@ -91,6 +91,48 @@ class GetCommandTest extends BaseTest {
         assertEquals("world", out.toString().trim());
     }
 
+    @Test
+    void shouldAcceptDirectoryAsPomPath() throws IOException {
+        writeString(projectPath.resolve("pom.xml"), """
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>a</groupId>
+                  <artifactId>a</artifactId>
+                  <version>1</version>
+                  <properties>
+                    <foo>hello</foo>
+                  </properties>
+                </project>
+                """);
+
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
+        underTest.execute("get", "-f", projectPath.toString(), "foo");
+
+        assertEquals("hello", out.toString().trim());
+    }
+
+    @Test
+    void shouldAcceptJarAsPomPath() throws IOException {
+        var pomPath = makeMavenJar(projectPath.resolve("example.jar"), """
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>a</groupId>
+                  <artifactId>a</artifactId>
+                  <version>1</version>
+                  <properties>
+                    <foo>hello</foo>
+                  </properties>
+                </project>
+                """);
+
+        var out = new StringWriter();
+        underTest.setOut(new PrintWriter(out));
+        underTest.execute("get", "-f", pomPath.toString(), "foo");
+
+        assertEquals("hello", out.toString().trim());
+    }
+
     @AfterEach
     void cleanup() throws IOException {
         deleteRecursive(projectPath);
