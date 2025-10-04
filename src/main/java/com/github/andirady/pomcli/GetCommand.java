@@ -15,28 +15,18 @@
  */
 package com.github.andirady.pomcli;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Objects;
 
-import org.apache.maven.model.Model;
 import org.apache.maven.model.Profile;
-import org.apache.maven.model.io.DefaultModelReader;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
 
 @Command(name = "get", description = "Get properties")
-public class GetCommand implements Runnable {
-
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
-    Path pomPath;
+public class GetCommand extends ReadingOptions implements Runnable {
 
     @Parameters(arity = "1")
     String property;
@@ -49,14 +39,7 @@ public class GetCommand implements Runnable {
 
     @Override
     public void run() {
-        var pomReader = new DefaultModelReader(null);
-        Model pom;
-        try (var is = Files.newInputStream(pomPath)) {
-            pom = pomReader.read(is, null);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
+        var pom = getPom().orElseThrow(() -> new IllegalStateException(pomPath + " is not a file."));
         var profileId = main.getProfileId();
         var propertyValue = profileId.map(id -> pom.getProfiles()
                 .stream()

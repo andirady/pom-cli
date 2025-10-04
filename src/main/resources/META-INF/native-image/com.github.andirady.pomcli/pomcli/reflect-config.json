@@ -80,6 +80,16 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
+  "name" : "com.github.andirady.pomcli.ReadingOptions",
+  "allDeclaredConstructors" : true,
+  "allPublicConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allPublicMethods" : true,
+  "fields" : [
+    { "name" : "pomPath" }
+  ]
+},
+{
   "name":"com.github.andirady.pomcli.RemoveCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
