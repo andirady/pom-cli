@@ -15,11 +15,11 @@
  */
 package com.github.andirady.pomcli;
 
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -278,7 +278,7 @@ public class AddCommand extends ReadingOptions implements Runnable {
     }
 
     Dependency addExclusions(Dependency dependency) {
-        excludes.stream().forEach(a -> {
+        excludes.stream().filter(not(String::isBlank)).forEach(a -> {
             var d = Main.stringToDependency(a);
             var e = new Exclusion();
 
