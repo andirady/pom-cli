@@ -481,6 +481,16 @@ class AddCommandTest extends BaseTest {
         assertNotSame(0, ec);
     }
 
+    @Test
+    void shouldNotAddExclusionWhenNotSpecified() {
+        var pomPath = tempDir.resolve("pom.xml");
+        underTest.execute("add", "-f", pomPath.toString(), "g:a:1.0.0");
+
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='g' and artifactId='a' and version='1.0.0']/exclusions/exclusion",
+                0);
+    }
+
     @ParameterizedTest
     @CsvSource(textBlock = """
             b,groupId='*' and artifactId='b'
