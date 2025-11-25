@@ -204,7 +204,7 @@ public class AddCommand extends ReadingOptions implements Runnable {
 
         if (streamManaged(model)
                 .filter(this::isImportScope)
-                .map(d -> resolver.readModel(d.getGroupId(), d.getArtifactId(), d.getVersion()))
+                .map(d -> resolver.readModel(d.getGroupId(), d.getArtifactId(), resolveIfProperty(d.getVersion())))
                 .flatMap(m -> resolver.findByArtifactId(m, dep.getGroupId(), dep.getArtifactId(), scopeName).stream())
                 .findFirst().orElse(null) instanceof Dependency managed) {
             if (dep.getGroupId() == null) {
@@ -293,6 +293,15 @@ public class AddCommand extends ReadingOptions implements Runnable {
         });
 
         return dependency;
+    }
+
+    String resolveIfProperty(String value) {
+        if (!(value.startsWith("${") && value.endsWith("}"))) {
+            return value;
+        }
+
+        var propKey = value.substring(2, value.length() - 1);
+        return model.getProperties().getProperty(propKey);
     }
 
 }

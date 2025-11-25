@@ -560,6 +560,39 @@ class AddCommandTest extends BaseTest {
                 1);
     }
 
+    @Test
+    void shouldSuccessWhenImportDependencyVersionIsProperty() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
+        writeString(pomPath, """
+                <project>
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>a</groupId>
+                  <artifactId>a</artifactId>
+                  <version>1</version>
+                  <dependencyManagement>
+                    <dependencies>
+                      <dependency>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                        <version>${version.prop}</version>
+                        <scope>import</scope>
+                        <type>pom</type>
+                      </dependency>
+                    </dependencies>
+                  </dependencyManagement>
+                  <properties>
+                    <version.prop>2.25.2</version.prop>
+                  </properties>
+                </project>
+                """);
+
+        var ec = underTest.execute("add", "-f", pomPath.toString(), "-d", "log4j-api");
+        assertSame(0, ec);
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='org.apache.logging.log4j' and artifactId='log4j-api' and not(version)]",
+                1);
+    }
+
     @FunctionalInterface
     interface PathFunction {
 
