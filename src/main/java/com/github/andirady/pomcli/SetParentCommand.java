@@ -31,7 +31,7 @@ import picocli.CommandLine.Model.CommandSpec;
 @Command(name = "parent", description = "Sets the parent for the project")
 public class SetParentCommand extends ModifyingCommandBase {
 
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
+    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml", description = "Path to pom.xml. Can be a regular file or directory")
     Path pomPath;
 
     @Parameters(arity = "1", paramLabel = "PARENT", converter = ParentConverter.class, description = "groupId:artifactId[:version] or path to a directory or pom.xml")

@@ -48,6 +48,17 @@ class PlugCommandTest extends BaseTest {
         deleteRecursive(tempDir);
     }
 
+    @Test
+    void shouldAcceptDirectoryAsPomPath() {
+        var projectDir = tempDir;
+        var pomXml = projectDir.resolve("pom.xml");
+        
+        var ec = underTest.execute("plug", "-f", projectDir.toString(), "g:a:1");
+
+        assertSame(0, ec);
+        assertXpath(pomXml, "/project/build/plugins/plugin[groupId='g' and artifactId='a' and version='1']", 1);
+    }
+
     @ParameterizedTest
     @CsvSource(textBlock = """
             g:a:1,                                      groupId='g' and artifactId='a' and version=1

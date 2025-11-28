@@ -18,7 +18,6 @@ package com.github.andirady.pomcli;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,21 +25,16 @@ import java.util.logging.Logger;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
 
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Help.Ansi;
+import picocli.CommandLine.Parameters;
 
 @Command(name = "remove", aliases = "rm", description = "Remove a dependency")
-public class RemoveCommand implements Runnable {
+public class RemoveCommand extends ReadingOptions implements Runnable {
 
     private static final Logger LOG = Logger.getLogger("remove");
-
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml", order = 0)
-    Path pomPath;
 
     @Parameters(arity = "1..*", paramLabel = "DEPENDENCY")
     List<Dependency> coords;
@@ -49,12 +43,7 @@ public class RemoveCommand implements Runnable {
 
     @Override
     public void run() {
-        var reader = new DefaultModelReader(null);
-        try (var is = Files.newInputStream(pomPath)) {
-            model = reader.read(is, Map.of());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        model = getPom().orElseThrow(() -> new IllegalStateException(pomPath + " is not a file."));
 
         var dependencies = coords.stream().map(this::findExisting).filter(Optional::isPresent)
                 .map(Optional::orElseThrow).toList();

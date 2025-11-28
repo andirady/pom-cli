@@ -44,7 +44,7 @@ class SetParentCommandTest extends BaseTest {
     }
 
     @Test
-    void test() {
+    void shouldSuccess() {
         var pomPath = tempDir.resolve("pom.xml");
 
         var ec = underTest.execute("parent", "-f", pomPath.toString(), "com.example:some-parent:1.0.0");
@@ -53,4 +53,5 @@ class SetParentCommandTest extends BaseTest {
         var expr = "/project/parent[groupId='com.example' and artifactId='some-parent' and version='1.0.0']";
         assertXpath(pomPath, expr, 1);
     }
+
 }

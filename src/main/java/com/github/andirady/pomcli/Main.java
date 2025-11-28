@@ -47,7 +47,7 @@ public class Main {
 
     public static void main(String[] args) {
         var main = new Main();
-        if ("true".equals(System.getProperty("debug"))) {
+        if (Boolean.getBoolean("debug")) {
             main.setDebug(true);
         }
 

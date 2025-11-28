@@ -104,7 +104,7 @@ class GetLatestVersionTest {
         assertEquals("1.0.0", version);
     }
 
-    interface InputStreamResponse extends HttpResponse<InputStream> {
+    public interface InputStreamResponse extends HttpResponse<InputStream> {
     }
 
 }

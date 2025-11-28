@@ -237,7 +237,8 @@ class IdCommandTest extends BaseTest {
         underTest.execute("id", "-f", pomPath.toString(), ".");
         LOG.fine(Files.readString(pomPath));
 
-        var expr = "/project/parent[groupId='a' and artifactId='a' and version='1' and relativePath='.." + FileSystems.getDefault().getSeparator() + "..']";
+        var expr = "/project/parent[groupId='a' and artifactId='a' and version='1' and relativePath='.."
+                + FileSystems.getDefault().getSeparator() + "..']";
         assertXpath(pomPath, expr, 1);
         assertEquals("jar a:c:1", out.toString().trim());
     }
@@ -336,24 +337,16 @@ class IdCommandTest extends BaseTest {
 
     @Test
     void shouldAcceptJarAsPomPath() throws IOException {
-        var pomPath = projectPath.resolve("example.jar");
-
-        try (var os = Files.newOutputStream(pomPath);
-                var jar = new java.util.jar.JarOutputStream(os)) {
-            var entry = new java.util.jar.JarEntry("META-INF/maven/g/a/pom.xml");
-            jar.putNextEntry(entry);
-            jar.write("""
-                    <project xmlns="http://maven.apache.org/POM/4.0.0"
-                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                      xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-                      <modelVersion>4.0.0</modelVersion>
-                      <groupId>g</groupId>
-                      <artifactId>a</artifactId>
-                      <version>v</version>
-                    </project>
-                    """.getBytes());
-            jar.closeEntry();
-        }
+        var pomPath = makeMavenJar(projectPath.resolve("example.jar"), """
+                <project xmlns="http://maven.apache.org/POM/4.0.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+                  <modelVersion>4.0.0</modelVersion>
+                  <groupId>g</groupId>
+                  <artifactId>a</artifactId>
+                  <version>v</version>
+                </project>
+                """);
 
         var out = new StringWriter();
         var underTest = new CommandLine(new Main());

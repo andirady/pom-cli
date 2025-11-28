@@ -16,20 +16,16 @@
 package com.github.andirady.pomcli;
 
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "set", description = "Set properties")
-public class SetCommand implements Runnable {
+public class SetCommand extends ReadingOptions implements Runnable {
 
     record Property(String key, String value) {
     }
@@ -41,26 +37,12 @@ public class SetCommand implements Runnable {
         }
     }
 
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml", order = 0)
-    Path pomPath;
-
     @Parameters(arity = "1..*", paramLabel = "key=value", converter = PropertyConverter.class)
     List<Property> properties;
 
     @Override
     public void run() {
-        if (!Files.isRegularFile(pomPath)) {
-            throw new IllegalStateException(pomPath + " is not a file.");
-        }
-
-        var reader = new DefaultModelReader(null);
-        Model pom;
-        try (var is = Files.newInputStream(pomPath)) {
-            pom = reader.read(is, null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
+        var pom = getPom().orElseThrow(() -> new IllegalStateException(pomPath + " is not a file."));
         var props = pom.getProperties();
         for (var p : properties) {
             props.setProperty(p.key(), p.value());

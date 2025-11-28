@@ -15,6 +15,7 @@
  */
 package com.github.andirady.pomcli;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.maven.model.Model;
@@ -32,7 +33,8 @@ import picocli.CommandLine.Spec;
 @Command(name = "plug", description = "Add a plugin")
 public class PlugCommand extends ModifyingCommandBase {
 
-    @Option(names = { "-f", "--file" }, defaultValue = "pom.xml")
+    @Option(names = { "-f",
+            "--file" }, defaultValue = "pom.xml", order = 0, description = "Path to pom.xml. Can be a regular file or directory")
     Path pomPath;
 
     @Parameters(arity = "1", paramLabel = "groupId:artifactId[:version]", description = "Plugin ID", converter = PluginConverter.class)
@@ -54,6 +56,13 @@ public class PlugCommand extends ModifyingCommandBase {
 
     @Override
     Path getPomPath() {
+        pomPath = pomPath.startsWith("~")
+                ? Path.of(System.getProperty("user.home")).resolve(pomPath.subpath(1, pomPath.getNameCount()))
+                : pomPath;
+
+        if (Files.isDirectory(pomPath)) {
+            pomPath = pomPath.resolve("pom.xml");
+        }
         return pomPath;
     }
 
