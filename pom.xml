@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.andirady.pomcli</groupId>
-  <artifactId>pomcli</artifactId>
+  <artifactId>pom-cli</artifactId>
   <version>${revision}</version>
   <scm>
     <developerConnection>scm:git:git@github.com:andirady/pom-cli.git</developerConnection>
@@ -11,8 +11,8 @@
   <properties>
     <maven.compiler.release>24</maven.compiler.release>
     <exec.mainClass>com.github.andirady.pomcli.Main</exec.mainClass>
+    <picocli.version>4.7.7</picocli.version>
     <exec.arguments>${args}</exec.arguments>
-    <picocli.version>4.7.4</picocli.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <executable-suffix></executable-suffix>
     <dist-suffix>.zip</dist-suffix>
@@ -102,16 +102,21 @@
           <artifactId>jreleaser-maven-plugin</artifactId>
           <version>1.17.0</version>
         </plugin>
+        <plugin>
+          <groupId>org.graalvm.buildtools</groupId>
+          <artifactId>native-maven-plugin</artifactId>
+          <version>0.9.28</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>3.6.0</version>
+        <version>3.9.0</version>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.11.0</version>
+        <version>3.14.1</version>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -247,7 +252,6 @@
           <plugin>
             <groupId>org.graalvm.buildtools</groupId>
             <artifactId>native-maven-plugin</artifactId>
-            <version>0.9.28</version>
             <extensions>true</extensions>
             <executions>
               <execution>
@@ -259,6 +263,10 @@
               </execution>
             </executions>
             <configuration>
+              <agent>
+                <enabled>true</enabled>
+                <metadataCopy></metadataCopy>
+              </agent>
               <imageName>pom-${project.version}</imageName>
               <mainClass>${exec.mainClass}</mainClass>
             </configuration>
@@ -268,6 +276,11 @@
     </profile>
     <profile>
       <id>run</id>
+      <activation>
+        <property>
+          <name>args</name>
+        </property>
+      </activation>
       <build>
         <defaultGoal>validate</defaultGoal>
         <plugins>
