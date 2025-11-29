@@ -1,4 +1,4 @@
-v=0.9.6
+v=$(curl -si https://github.com/andirady/pom-cli/releases/latest | grep location | sed -n 's#.*/tag/\(.*\)$#\1#p')
 
 pwd=$PWD
 workdir=$HOME/.cache/pom-cli

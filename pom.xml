@@ -19,7 +19,7 @@
     <junit.version>5.9.3</junit.version>
     <jackson.version>2.14.1</jackson.version>
     <jdk.version>24.0.0</jdk.version>
-    <revision>0.9.5</revision>
+    <revision>0.9.6</revision>
   </properties>
   <dependencies>
     <dependency>
