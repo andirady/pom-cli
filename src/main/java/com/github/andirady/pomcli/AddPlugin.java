@@ -113,16 +113,23 @@ public class AddPlugin {
 
         var parentModel = ResolutionProvider.getInstance().readModel(parent.getGroupId(), parent.getArtifactId(),
                 parent.getVersion());
-        var managed = Optional.ofNullable(parentModel.getBuild())
-                .map(Build::getPluginManagement)
-                .filter(Objects::nonNull)
-                .map(PluginManagement::getPlugins).map(List::stream)
-                .orElseGet(Stream::of)
-                .filter(p -> p.getArtifactId().equals(plugin.getArtifactId()))
+
+        if (!(parentModel.getBuild() instanceof Build b
+                && b.getPluginManagement() instanceof PluginManagement pluginMgmt)) {
+            return false;
+        }
+
+        var managed = pluginMgmt.getPlugins().stream()
+                .filter(p -> p.getArtifactId() instanceof String s && (s.equals(plugin.getArtifactId())
+                        || (s.startsWith(plugin.getArtifactId()) && s.endsWith("-maven-plugin"))))
                 .findFirst()
                 .orElse(null);
 
         if (managed != null) {
+            // Make sure we copy full plugin name when adding with plugin prefix
+            if (!managed.getArtifactId().equals(plugin.getArtifactId())) {
+                plugin.setArtifactId(managed.getArtifactId());
+            }
             plugin.setGroupId(managed.getGroupId());
             return true;
         }

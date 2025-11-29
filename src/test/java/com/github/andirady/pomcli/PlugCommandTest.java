@@ -85,7 +85,16 @@ class PlugCommandTest extends BaseTest {
                 <version>3.2.1</version>
               </parent>
               <artifactId>hello</artifactId>
-            </project>`, spring-boot-maven-plugin""")
+            </project>`,spring-boot-maven-plugin
+            `<project>
+              <modelVersion>4.0.0</modelVersion>
+              <parent>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-parent</artifactId>
+                <version>3.2.1</version>
+              </parent>
+              <artifactId>hello</artifactId>
+            </project>`,spring-boot""")
     void supportsManagedPlugin(String pomContent, String input) throws IOException {
         var pomPath = writeString(tempDir.resolve("pom.xml"), pomContent);
 
@@ -93,7 +102,7 @@ class PlugCommandTest extends BaseTest {
         assertSame(0, ec, "Exit code");
 
         var expr = "/project/build/plugins/plugin[groupId='org.springframework.boot' and artifactId='spring-boot-maven-plugin']";
-        assertXpath(pomPath, expr, 1);
+        assertXpath(pomPath, expr, 1, "pom=[%s], input=[%s]".formatted(pomContent, input));
     }
 
     @Test
@@ -115,4 +124,5 @@ class PlugCommandTest extends BaseTest {
         var expr = "/project/build/pluginManagement/plugins/plugin[artifactId='maven-failsafe-plugin' and version]";
         assertXpath(pomPath, expr, 1);
     }
+
 }
