@@ -1,4 +1,4 @@
-v=0.9.5
+v=0.9.6
 
 pwd=$PWD
 workdir=$HOME/.cache/pom-cli
