@@ -14,7 +14,7 @@ fi
 mkdir -p $workdir
 cd $workdir
 
-dist_name="pomcli-${v}-linux-x86_64"
+dist_name="pom-cli-${v}-linux-x86_64"
 archive_name="${dist_name}.tar.gz"
 
 mkdir -p $PREFIX/share/pom-cli
