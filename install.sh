@@ -17,7 +17,7 @@ cd $workdir
 uname_m=`uname -m`
 case "$uname_m" in
     x86_64|amd64) arch="x86_64" ;;
-    aarch64|arm64) arch="aarch64" ;;
+    aarch64|arm64) arch="aarch_64" ;;
     *) arch="$uname_m" ;; # fallback to raw
 esac
 
