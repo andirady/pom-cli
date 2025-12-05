@@ -14,7 +14,14 @@ fi
 mkdir -p $workdir
 cd $workdir
 
-dist_name="pom-cli-${v}-linux-x86_64"
+uname_m=`uname -m`
+case "$uname_m" in
+    x86_64|amd64) arch="x86_64" ;;
+    aarch64|arm64) arch="aarch64" ;;
+    *) arch="$uname_m" ;; # fallback to raw
+esac
+
+dist_name="pom-cli-${v}-linux-${arch}"
 archive_name="${dist_name}.tar.gz"
 
 mkdir -p $PREFIX/share/pom-cli
