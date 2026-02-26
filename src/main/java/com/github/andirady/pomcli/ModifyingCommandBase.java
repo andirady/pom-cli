@@ -28,6 +28,8 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.DefaultModelReader;
 import org.apache.maven.model.io.DefaultModelWriter;
 
+import picocli.CommandLine.Help.Ansi;
+
 public abstract class ModifyingCommandBase implements Callable<Integer> {
 
     static final Logger LOG = Logger.getLogger("");
@@ -46,7 +48,7 @@ public abstract class ModifyingCommandBase implements Callable<Integer> {
             LOG.fine(() -> pomPath + " does not exists. Creating a new one");
             return new NewPom().newPom(pomPath, standalone);
         } else {
-            throw new FileNotFoundException(pomPath.toString());
+            throw new FileNotFoundException("File does not exists: %s".formatted(pomPath.toString()));
         }
     }
 
@@ -67,10 +69,15 @@ public abstract class ModifyingCommandBase implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        var model = getModel(getPomPathMustExists(), getStandalone());
-        var rc = process(model);
-        saveModel(model);
-        return rc;
+        try {
+            var model = getModel(getPomPathMustExists(), getStandalone());
+            var rc = process(model);
+            saveModel(model);
+            return rc;
+        } catch (FileNotFoundException e) {
+            System.err.println(e.getMessage());
+            return 1;
+        }
     }
 
     boolean getStandalone() {

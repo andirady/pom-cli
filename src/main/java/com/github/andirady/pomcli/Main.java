@@ -15,6 +15,7 @@
  */
 package com.github.andirady.pomcli;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
@@ -41,7 +42,8 @@ import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.TypeConversionException;
 
 @Command(name = "pom", subcommandsRepeatable = true, subcommands = { IdCommand.class, AddCommand.class,
-        SearchCommand.class, SetCommand.class, UnsetCommand.class, GetCommand.class, PlugCommand.class,
+        SearchCommand.class, SetCommand.class, UnsetCommand.class, GetCommand.class,
+        PlugCommand.class, UnplugCommand.class,
         RemoveCommand.class, SetParentCommand.class })
 public class Main {
 
