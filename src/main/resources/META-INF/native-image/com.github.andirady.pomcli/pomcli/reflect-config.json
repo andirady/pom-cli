@@ -42,6 +42,12 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,
 {
+  "name":"com.github.andirady.pomcli.UnplugCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]}
+,
+{
   "name":"com.github.andirady.pomcli.SearchCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
