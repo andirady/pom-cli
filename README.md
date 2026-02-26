@@ -272,6 +272,28 @@ e.g.:
 pom parent org.springframework.boot:spring-boot-starter-parent plug spring-boot-maven-plugin
 ```
 
+### Remove plugin
+
+#### Unplug by artifactId
+
+```
+pom unplug spring-boot-maven-plugin
+```
+
+#### Unplug by groupId and artifactId
+
+Use case: multiple plugins has the same artifactId.
+
+```
+pom unplug org.springframework.boot:spring-boot-maven-plugin
+```
+
+#### Unplug from a profile
+
+```
+pom -P dev unplug spring-boot-maven-plugin
+```
+
 ## Building 
 
 This project requires Java 21+, GraalVM CE and Maven 3.8.4+.
