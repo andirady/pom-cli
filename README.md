@@ -66,14 +66,18 @@ pom id com.example:.
 pom id com.example:.:1.0.0
 ```
 
-By default, if the ``group_id`` is not specified, ``unnamed`` will be used.
-To set a different default ``group_id`` you can set the ``POM_CLI_DEFAULT_GROUP_ID`` environment variable.
+By default, if the ``group_id`` is not specified, ``unnamed`` will be used,
+and if the version is not specified, ``0.0.1-SNAPSHOT`` will be used.
+To set different defaults, you can use:
+- ``POM_CLI_DEFAULT_GROUP_ID`` for ``group_id``
+- ``POM_CLI_DEFAULT_VERSION`` for version
 
 ```bash
 export POM_CLI_DEFAULT_GROUP_ID=com.example
+export POM_CLI_DEFAULT_VERSION=1.2.3-SNAPSHOT
 cd my-app
 pom id .
-# The pom will have ID com.example:my-app:0.0.1-SNAPSHOT
+# The pom will have ID com.example:my-app:1.2.3-SNAPSHOT
 ```
 
 If the current folder belongs to a multi-module maven project,

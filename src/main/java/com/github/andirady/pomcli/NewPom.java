@@ -93,11 +93,12 @@ public class NewPom {
             });
         }
 
-        model.setVersion("0.0.1-SNAPSHOT");
+        var config = Config.getInstance();
+        model.setVersion(config.getDefaultVersion());
         model.setArtifactId(pomPath.getParent().getFileName().toString());
         if (model.getParent() == null) {
-            model.setGroupId(Config.getInstance().getDefaultGroupId());
-            model.setVersion("0.0.1-SNAPSHOT");
+            model.setGroupId(config.getDefaultGroupId());
+            model.setVersion(config.getDefaultVersion());
         }
 
         return model;

@@ -24,4 +24,6 @@ public interface Config {
     }
 
     String getDefaultGroupId();
+
+    String getDefaultVersion();
 }

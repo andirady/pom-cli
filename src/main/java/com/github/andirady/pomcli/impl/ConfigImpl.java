@@ -21,8 +21,13 @@ import com.github.andirady.pomcli.Config;
 
 public class ConfigImpl implements Config {
 
-	@Override
-	public String getDefaultGroupId() {
+    @Override
+    public String getDefaultGroupId() {
         return Objects.requireNonNullElse(System.getenv("POM_CLI_DEFAULT_GROUP_ID"), "unnamed");
-	}
+    }
+
+    @Override
+    public String getDefaultVersion() {
+        return Objects.requireNonNullElse(System.getenv("POM_CLI_DEFAULT_VERSION"), "0.0.1-SNAPSHOT");
+    }
 }
