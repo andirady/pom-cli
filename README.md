@@ -2,7 +2,7 @@
 
 # pom-cli 🪄
 
-**pom-cli** lets you quickly create a ``pom.xml`` file as well as update it without manually editing the file. It's written in Java and compiled to native code with the help of [graalvm](https://www.graalvm.org/).
+**pom-cli** lets you quickly create and update a ``pom.xml`` file without manual XML editing. It's written in Java and compiled to native code with [GraalVM](https://www.graalvm.org/).
 
 ![Demo for spring-boot](docs/assets/terminal-recording.gif)
 
@@ -30,9 +30,23 @@ docker run --rm -it --user $(id -u):$(id -g) -v $PWD:/workspace ghcr.io/andirady
 
 ## Usage
 
+### Quick start
+
+```bash
+# Create pom.xml with coordinates inferred from current folder name
+pom id com.example:.
+
+# Add dependencies and plugins
+pom add org.junit.jupiter:junit-jupiter --test
+pom plug org.apache.maven.plugins:maven-surefire-plugin
+
+# Inspect current project ID
+pom id
+```
+
 ### Setting project ID
 
-The project ID can be set using the `id` command. This command will create a new `pom.xml` if it does not exists yet.
+The project ID can be set using the `id` command. This command will create a new `pom.xml` if it does not exist yet.
 
 ```bash
 # Set group ID and artifact ID, version defaults to 0.0.1-SNAPSHOT
@@ -52,7 +66,7 @@ pom id com.example:.
 pom id com.example:.:1.0.0
 ```
 
-By default, if the ``groupd_id`` is not specified, ``unnamed`` will be used.
+By default, if the ``group_id`` is not specified, ``unnamed`` will be used.
 To set a different default ``group_id`` you can set the ``POM_CLI_DEFAULT_GROUP_ID`` environment variable.
 
 ```bash
@@ -94,7 +108,7 @@ pom id
 
 Dependencies can be added using the `add` command.
 
-This command will create a new `pom.xml` if it does not exists yet.
+This command will create a new `pom.xml` if it does not exist yet.
 The new `pom.xml` will use the default group ID and the folder name as artifact ID.
 
 ```bash
@@ -121,8 +135,8 @@ For projects that are packaged as "pom", the dependencies will be added
 to the ``dependencyManagement`` section.
 
 > [!NOTE]
-> The are projects that uses `/project/dependencies` so that the submodule will inherit the dependencies,
-> but I believe it's best to spell the dependencies separately in each modules.
+> Some projects use `/project/dependencies` so submodules inherit dependencies,
+> but this tool intentionally prefers declaring dependencies explicitly in each module.
 
 If version is not specified, the latest version of the artifact will be used.
 If there is a parent pom, and it already included the dependency version,
@@ -145,13 +159,13 @@ For example, if the parent pom contains the following declaration:
   </dependencyManagement>
 ```
 
-Running the following:
+Running this command:
 
 ```bash
 pom add some-api
 ```
 
-would results in the target ``pom.xml`` to contain the following:
+will make the target ``pom.xml`` contain the following:
 
 ```xml
   <dependencies>
@@ -172,7 +186,7 @@ or managed by the parent.
 Dependencies can be removed from the `pom.xml` using the `remove` command.
 
 ```bash
-# Remove by spefifying the groupId and artifactId
+# Remove by specifying the groupId and artifactId
 pom remove groupId:artifactId
 
 # Remove by specifying the artifactId
@@ -189,6 +203,7 @@ You can set the parent POM for your project using either a path to an existing p
 If you set a parent, subsequent commands (such as `pom add` or `pom plug`) will properly manage dependencies and plugins according to the parent POM’s configuration.
 
 #### Set parent by local path
+
 ```bash
 # Parent is parent directory
 pom parent ..
@@ -202,7 +217,8 @@ pom parent /path/to/parent
 This will set the `<parent>` element in your `pom.xml` to reference the specified parent project's POM file.
 If the version of the parent was updated, calling this again will update the `<version>` of the `<parent>`.
 
-#### Set parent by Maven coordinates:
+#### Set parent by Maven coordinates
+
 ```bash
 # Use latest version
 pom parent groupId:artifactId
@@ -219,7 +235,7 @@ This will set the `<parent>` element in your `pom.xml` using the given group ID,
 pom set maven.compiler.source=17
 
 # Set multiple properties
-pom set maven.compiler.source=17 maven.compiler.source=17
+pom set maven.compiler.source=17 maven.compiler.target=17
 
 # Set multiple properties leveraging shell expansion
 pom set maven.compiler.{source,target}=17
@@ -231,7 +247,7 @@ pom set maven.compiler.{source,target}=17
 # Get property from default profile
 pom get maven.compiler.source
 
-# Set property from specific profile
+# Get property from specific profile
 pom -P test get maven.compiler.source
 ```
 
@@ -260,7 +276,7 @@ pom search --full-class org.apache.logging.log4j.Logger
 pom search -fc org.apache.logging.log4j.Logger
 ```
 
-### Add plugin
+### Adding plugins
 
 ```bash
 # Add using full coordinate
@@ -291,14 +307,14 @@ e.g.:
 pom parent org.springframework.boot:spring-boot-starter-parent plug spring-boot-maven-plugin
 ```
 
-### Remove plugin
+### Removing plugins
 
 ```bash
 # Unplug by artifactId
 pom unplug spring-boot-maven-plugin
 
 # Unplug by groupId and artifactId
-# Use case: multiple plugins has the same artifactId.
+# Use case: multiple plugins have the same artifactId.
 pom unplug org.springframework.boot:spring-boot-maven-plugin
 
 # Unplug from a profile
