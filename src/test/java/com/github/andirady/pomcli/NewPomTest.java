@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.nio.file.Path;
 
+import com.github.andirady.pomcli.impl.ConfigTestImpl;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -35,6 +37,23 @@ class NewPomTest extends BaseTest {
         var underTest = new NewPom();
         var model = underTest.newPom(Path.of("foo", "bar", "pom.xml"), standalone);
         assertEquals("bar", model.getArtifactId());
+    }
+
+
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    void shouldUseConfiguredDefaultVersion(boolean standalone) {
+        if (Config.getInstance() instanceof ConfigTestImpl config) {
+            config.setDefaultVersion("1.2.3-SNAPSHOT");
+        }
+
+        var underTest = new NewPom();
+        var model = underTest.newPom(Path.of("foo", "bar", "pom.xml"), standalone);
+        assertEquals("1.2.3-SNAPSHOT", model.getVersion());
+
+        if (Config.getInstance() instanceof ConfigTestImpl config) {
+            config.setDefaultVersion(null);
+        }
     }
 
     @ParameterizedTest

@@ -20,11 +20,17 @@ import com.github.andirady.pomcli.Config;
 public class ConfigTestImpl implements Config {
 
     private static ThreadLocal<String> defaultGroupIdTL = new ThreadLocal<>();
+    private static ThreadLocal<String> defaultVersionTL = new ThreadLocal<>();
 
     private Config actualImpl = new ConfigImpl();
 
 	public void setDefaultGroupId(String defaultGroupId) {
         defaultGroupIdTL.set(defaultGroupId);
+    }
+
+
+    public void setDefaultVersion(String defaultVersion) {
+        defaultVersionTL.set(defaultVersion);
     }
 
     @Override
@@ -35,5 +41,15 @@ public class ConfigTestImpl implements Config {
         }
 
         return defaultGroupId;
+    }
+
+    @Override
+    public String getDefaultVersion() {
+        var defaultVersion = defaultVersionTL.get();
+        if (defaultVersion == null) {
+            return actualImpl.getDefaultVersion();
+        }
+
+        return defaultVersion;
     }
 }
