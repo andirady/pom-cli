@@ -286,7 +286,7 @@ class AddCommandTest extends BaseTest {
     @MethodSource
     void addManagedFailOnDuplicate(PathFunction pomPathCreator) throws IOException {
         var pomPath = pomPathCreator.apply(tempDir);
-        var ec = underTest.execute("add", "-d", "-f", pomPath.toString(), "jackson-databind");
+        var ec = underTest.execute("add", "-f", pomPath.toString(), "jackson-databind");
         assertSame(1, ec);
     }
 
@@ -586,7 +586,7 @@ class AddCommandTest extends BaseTest {
                 </project>
                 """);
 
-        var ec = underTest.execute("add", "-f", pomPath.toString(), "-d", "log4j-api");
+        var ec = underTest.execute("add", "-f", pomPath.toString(), "log4j-api");
         assertSame(0, ec);
         assertXpath(pomPath,
                 "/project/dependencies/dependency[groupId='org.apache.logging.log4j' and artifactId='log4j-api' and not(version)]",
