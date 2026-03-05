@@ -350,7 +350,7 @@ public class AddCommand extends ReadingOptions implements Runnable {
 
     String readStdin() {
         try {
-            return new String(spec.commandLine().getIn().readAllBytes(), StandardCharsets.UTF_8).trim();
+            return new String(System.in.readAllBytes(), StandardCharsets.UTF_8).trim();
         } catch (IOException e) {
             throw new RuntimeException("Unable to read stdin", e);
         }
