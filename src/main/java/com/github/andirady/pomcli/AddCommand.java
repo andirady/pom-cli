@@ -18,7 +18,9 @@ package com.github.andirady.pomcli;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
@@ -86,7 +91,7 @@ public class AddCommand extends ReadingOptions implements Runnable {
     @Option(names = { "-o", "--optional" }, defaultValue = "false")
     public boolean optional;
 
-    @Parameters(arity = "1..*", paramLabel = "DEPENDENCY", description = """
+    @Parameters(arity = "0..*", paramLabel = "DEPENDENCY", description = """
             groupId:artifactId[:version] or path to either
             a directory, pom.xml, or a jar file.""")
     List<Dependency> coords;
@@ -111,6 +116,13 @@ public class AddCommand extends ReadingOptions implements Runnable {
             return new NewPom().newPom(getPomFilePath());
         });
         readParentPom(getPomReader());
+
+        if (coords == null || coords.isEmpty()) {
+            coords = readDependenciesFromStdin();
+        }
+        if (coords.isEmpty()) {
+            throw new IllegalArgumentException("No dependency provided");
+        }
 
         var existing = getExistingDependencies();
         LOG.fine("Checking for duplicates");
@@ -302,6 +314,104 @@ public class AddCommand extends ReadingOptions implements Runnable {
 
         var propKey = value.substring(2, value.length() - 1);
         return model.getProperties().getProperty(propKey);
+    }
+
+    List<Dependency> readDependenciesFromStdin() {
+        if (System.console() != null) {
+            return List.of();
+        }
+
+        var xml = readStdin();
+        if (xml.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            var builder = newDocumentBuilderFactory().newDocumentBuilder();
+            var doc = builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+            var root = doc.getDocumentElement();
+            if (root == null) {
+                return List.of();
+            }
+
+            var dependencies = switch (root.getTagName()) {
+                case "dependency" -> List.of(root);
+                case "dependencies" -> childElements(root, "dependency");
+                default -> throw new IllegalArgumentException("Expected <dependency> or <dependencies> input from stdin");
+            };
+
+            return dependencies.stream().map(this::toDependency).toList();
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unable to parse dependencies from stdin", e);
+        }
+    }
+
+    String readStdin() {
+        try {
+            return new String(spec.commandLine().getIn().readAllBytes(), StandardCharsets.UTF_8).trim();
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read stdin", e);
+        }
+    }
+
+    Dependency toDependency(org.w3c.dom.Element dependencyElement) {
+        var dep = new Dependency();
+        dep.setGroupId(nodeText(dependencyElement, "groupId"));
+        dep.setArtifactId(nodeText(dependencyElement, "artifactId"));
+        dep.setVersion(nodeText(dependencyElement, "version"));
+        dep.setClassifier(nodeText(dependencyElement, "classifier"));
+        dep.setType(nodeText(dependencyElement, "type"));
+        dep.setScope(nodeText(dependencyElement, "scope"));
+
+        var optionalValue = nodeText(dependencyElement, "optional");
+        if (optionalValue != null) {
+            dep.setOptional(Boolean.parseBoolean(optionalValue));
+        }
+
+        if (dep.getArtifactId() == null) {
+            throw new IllegalArgumentException("Invalid dependency from stdin: missing artifactId");
+        }
+
+        return dep;
+    }
+
+    DocumentBuilderFactory newDocumentBuilderFactory() {
+        try {
+            var dbf = DocumentBuilderFactory.newInstance();
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            dbf.setExpandEntityReferences(false);
+            dbf.setXIncludeAware(false);
+            return dbf;
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to initialize XML parser", e);
+        }
+    }
+
+    List<org.w3c.dom.Element> childElements(org.w3c.dom.Element parent, String tagName) {
+        var nodes = parent.getChildNodes();
+        var result = new ArrayList<org.w3c.dom.Element>();
+        for (var i = 0; i < nodes.getLength(); i++) {
+            if (nodes.item(i) instanceof org.w3c.dom.Element child && tagName.equals(child.getTagName())) {
+                result.add(child);
+            }
+        }
+
+        return result;
+    }
+
+    String nodeText(org.w3c.dom.Element parent, String tagName) {
+        var matches = childElements(parent, tagName);
+        if (matches.isEmpty()) {
+            return null;
+        }
+
+        var value = matches.get(0).getTextContent();
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
 }

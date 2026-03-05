@@ -599,4 +599,61 @@ class AddCommandTest extends BaseTest {
         Path apply(Path path) throws IOException;
     }
 
+
+    @Test
+    void shouldAcceptDependencyXmlFromStdin() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
+        underTest.setIn(new java.io.ByteArrayInputStream("""
+                <dependency>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-api</artifactId>
+                  <version>2.24.3</version>
+                </dependency>
+                """.getBytes()));
+
+        var ec = underTest.execute("add", "-f", pomPath.toString());
+        assertSame(0, ec);
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='org.apache.logging.log4j' and artifactId='log4j-api' and version='2.24.3']",
+                1);
+    }
+
+    @Test
+    void shouldAcceptDependenciesXmlRootFromStdin() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
+        underTest.setIn(new java.io.ByteArrayInputStream("""
+                <dependencies>
+                  <dependency>
+                    <groupId>g</groupId>
+                    <artifactId>a</artifactId>
+                    <version>1</version>
+                  </dependency>
+                  <dependency>
+                    <groupId>g</groupId>
+                    <artifactId>b</artifactId>
+                    <version>2</version>
+                  </dependency>
+                </dependencies>
+                """.getBytes()));
+
+        var ec = underTest.execute("add", "-f", pomPath.toString());
+        assertSame(0, ec);
+        assertXpath(pomPath, "/project/dependencies/dependency[artifactId='a' and version='1']", 1);
+        assertXpath(pomPath, "/project/dependencies/dependency[artifactId='b' and version='2']", 1);
+    }
+
+
+    @Test
+    void shouldRejectInvalidXmlRootFromStdin() {
+        var pomPath = tempDir.resolve("pom.xml");
+        underTest.setIn(new java.io.ByteArrayInputStream("""
+                <project>
+                  <dependencies/>
+                </project>
+                """.getBytes()));
+
+        var ec = underTest.execute("add", "-f", pomPath.toString());
+        assertSame(1, ec);
+    }
+
 }
