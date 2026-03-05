@@ -133,6 +133,15 @@ pom add /path/to/file.jar
 # Add by path to maven module
 pom add /path/to/module
 pom add /path/to/module/pom.xml
+
+# Add from stdin (single <dependency> or <dependencies> root)
+pom add <<EOF
+<dependency>
+  <groupId>org.apache.logging.log4j</groupId>
+  <artifactId>log4j-api</artifactId>
+  <version>${log4j-api.version}</version>
+</dependency>
+EOF
 ```
 
 For projects that are packaged as "pom", the dependencies will be added

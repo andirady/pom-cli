@@ -599,4 +599,67 @@ class AddCommandTest extends BaseTest {
         Path apply(Path path) throws IOException;
     }
 
+
+    @Test
+    void shouldAcceptDependencyXmlFromStdin() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
+        var ec = executeWithStdin("""
+                <dependency>
+                  <groupId>org.apache.logging.log4j</groupId>
+                  <artifactId>log4j-api</artifactId>
+                  <version>2.24.3</version>
+                </dependency>
+                """, "add", "-f", pomPath.toString());
+        assertSame(0, ec);
+        assertXpath(pomPath,
+                "/project/dependencies/dependency[groupId='org.apache.logging.log4j' and artifactId='log4j-api' and version='2.24.3']",
+                1);
+    }
+
+    @Test
+    void shouldAcceptDependenciesXmlRootFromStdin() throws Exception {
+        var pomPath = tempDir.resolve("pom.xml");
+        var ec = executeWithStdin("""
+                <dependencies>
+                  <dependency>
+                    <groupId>g</groupId>
+                    <artifactId>a</artifactId>
+                    <version>1</version>
+                  </dependency>
+                  <dependency>
+                    <groupId>g</groupId>
+                    <artifactId>b</artifactId>
+                    <version>2</version>
+                  </dependency>
+                </dependencies>
+                """, "add", "-f", pomPath.toString());
+        assertSame(0, ec);
+        assertXpath(pomPath, "/project/dependencies/dependency[artifactId='a' and version='1']", 1);
+        assertXpath(pomPath, "/project/dependencies/dependency[artifactId='b' and version='2']", 1);
+    }
+
+
+    @Test
+    void shouldRejectInvalidXmlRootFromStdin() {
+        var pomPath = tempDir.resolve("pom.xml");
+        var ec = executeWithStdin("""
+                <project>
+                  <dependencies/>
+                </project>
+                """, "add", "-f", pomPath.toString());
+        assertSame(1, ec);
+    }
+
+
+    int executeWithStdin(String input, String... args) {
+        var originalIn = System.in;
+        try {
+            System.setIn(new java.io.ByteArrayInputStream(input.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            underTest = Main.createCommandLine(new Main());
+            return underTest.execute(args);
+        } finally {
+            System.setIn(originalIn);
+        }
+    }
+
 }
