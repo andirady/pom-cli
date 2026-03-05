@@ -15,7 +15,6 @@
  */
 package com.github.andirady.pomcli;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;

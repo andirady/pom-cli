@@ -31,6 +31,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -599,8 +600,8 @@ class AddCommandTest extends BaseTest {
         Path apply(Path path) throws IOException;
     }
 
-
     @Test
+    @ResourceLock("systemIn")
     void shouldAcceptDependencyXmlFromStdin() throws Exception {
         var pomPath = tempDir.resolve("pom.xml");
         var ec = executeWithStdin("""
@@ -617,6 +618,7 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
+    @ResourceLock("systemIn")
     void shouldAcceptDependenciesXmlRootFromStdin() throws Exception {
         var pomPath = tempDir.resolve("pom.xml");
         var ec = executeWithStdin("""
@@ -638,8 +640,8 @@ class AddCommandTest extends BaseTest {
         assertXpath(pomPath, "/project/dependencies/dependency[artifactId='b' and version='2']", 1);
     }
 
-
     @Test
+    @ResourceLock("systemIn")
     void shouldRejectInvalidXmlRootFromStdin() {
         var pomPath = tempDir.resolve("pom.xml");
         var ec = executeWithStdin("""
@@ -649,7 +651,6 @@ class AddCommandTest extends BaseTest {
                 """, "add", "-f", pomPath.toString());
         assertSame(1, ec);
     }
-
 
     int executeWithStdin(String input, String... args) {
         var originalIn = System.in;
