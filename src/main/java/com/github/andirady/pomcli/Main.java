@@ -15,7 +15,6 @@
  */
 package com.github.andirady.pomcli;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
@@ -58,6 +57,8 @@ public class Main {
             cli.setOut(out);
 
             System.exit(cli.execute(args));
+        } catch (Exception e) {
+            Logger.getLogger("").log(Level.FINE, e, e::getMessage);
         }
     }
 

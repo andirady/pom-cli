@@ -124,6 +124,8 @@ public class AddCommand extends ReadingOptions implements Runnable {
             throw new IllegalArgumentException("No dependency provided");
         }
 
+        LOG.fine(() -> "Attempting to add " + coords + " to " + pomPath);
+
         var existing = getExistingDependencies();
         LOG.fine("Checking for duplicates");
         var duplicates = coords.stream()
@@ -317,12 +319,9 @@ public class AddCommand extends ReadingOptions implements Runnable {
     }
 
     List<Dependency> readDependenciesFromStdin() {
-        if (System.console() != null) {
-            return List.of();
-        }
-
         var xml = readStdin();
         if (xml.isBlank()) {
+            LOG.fine(() -> "No XML read from stdin. Returning empty dependencies for " + pomPath);
             return List.of();
         }
 
