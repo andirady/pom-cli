@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -31,7 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -40,6 +40,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import picocli.CommandLine;
 
 class AddCommandTest extends BaseTest {
+
+    private final InputStream originalIn = System.in;
 
     CommandLine underTest;
     @TempDir
@@ -53,6 +55,7 @@ class AddCommandTest extends BaseTest {
 
     @AfterEach
     void cleanUp() {
+        System.setIn(originalIn);
         deleteRecursive(tempDir);
     }
 
@@ -601,7 +604,6 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    @ResourceLock("systemIn")
     void shouldAcceptDependencyXmlFromStdin() throws Exception {
         var pomPath = tempDir.resolve("pom.xml");
         var ec = executeWithStdin("""
@@ -618,7 +620,6 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    @ResourceLock("systemIn")
     void shouldAcceptDependenciesXmlRootFromStdin() throws Exception {
         var pomPath = tempDir.resolve("pom.xml");
         var ec = executeWithStdin("""
@@ -641,7 +642,6 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    @ResourceLock("systemIn")
     void shouldRejectInvalidXmlRootFromStdin() {
         var pomPath = tempDir.resolve("pom.xml");
         var ec = executeWithStdin("""
@@ -653,14 +653,9 @@ class AddCommandTest extends BaseTest {
     }
 
     int executeWithStdin(String input, String... args) {
-        var originalIn = System.in;
-        try {
-            System.setIn(new java.io.ByteArrayInputStream(input.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
-            underTest = Main.createCommandLine(new Main());
-            return underTest.execute(args);
-        } finally {
-            System.setIn(originalIn);
-        }
+        System.setIn(new java.io.ByteArrayInputStream(input.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        underTest = Main.createCommandLine(new Main());
+        return underTest.execute(args);
     }
 
 }
