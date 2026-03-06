@@ -319,11 +319,6 @@ public class AddCommand extends ReadingOptions implements Runnable {
     }
 
     List<Dependency> readDependenciesFromStdin() {
-        if (System.console() != null) {
-            LOG.fine(() -> "No console! Returning empty dependencies for " + pomPath);
-            return List.of();
-        }
-
         var xml = readStdin();
         if (xml.isBlank()) {
             LOG.fine(() -> "No XML read from stdin. Returning empty dependencies for " + pomPath);
