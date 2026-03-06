@@ -612,7 +612,7 @@ class AddCommandTest extends BaseTest {
                   <artifactId>log4j-api</artifactId>
                   <version>2.24.3</version>
                 </dependency>
-                """, "add", "-f", pomPath.toString());
+                """, "add", "-d", "-f", pomPath.toString());
         assertSame(0, ec);
         assertXpath(pomPath,
                 "/project/dependencies/dependency[groupId='org.apache.logging.log4j' and artifactId='log4j-api' and version='2.24.3']",
@@ -635,7 +635,7 @@ class AddCommandTest extends BaseTest {
                     <version>2</version>
                   </dependency>
                 </dependencies>
-                """, "add", "-f", pomPath.toString());
+                """, "add", "-d", "-f", pomPath.toString());
         assertSame(0, ec);
         assertXpath(pomPath, "/project/dependencies/dependency[artifactId='a' and version='1']", 1);
         assertXpath(pomPath, "/project/dependencies/dependency[artifactId='b' and version='2']", 1);
@@ -648,7 +648,7 @@ class AddCommandTest extends BaseTest {
                 <project>
                   <dependencies/>
                 </project>
-                """, "add", "-f", pomPath.toString());
+                """, "add", "-d", "-f", pomPath.toString());
         assertSame(1, ec);
     }
 
