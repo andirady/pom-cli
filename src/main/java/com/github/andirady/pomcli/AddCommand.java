@@ -124,6 +124,8 @@ public class AddCommand extends ReadingOptions implements Runnable {
             throw new IllegalArgumentException("No dependency provided");
         }
 
+        LOG.fine(() -> "Attempting to add " + coords + " to " + pomPath);
+
         var existing = getExistingDependencies();
         LOG.fine("Checking for duplicates");
         var duplicates = coords.stream()
