@@ -31,6 +31,7 @@ import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -604,8 +605,9 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    void shouldAcceptDependencyXmlFromStdin() throws Exception {
-        var pomPath = tempDir.resolve("pom.xml");
+    void shouldAcceptDependencyXmlFromStdin(TestInfo testInfo) throws Exception {
+        var pomPath = Files.createDirectory(tempDir.resolve(testInfo.getTestMethod().get().getName()))
+                .resolve("pom.xml");
         var ec = executeWithStdin("""
                 <dependency>
                   <groupId>org.apache.logging.log4j</groupId>
@@ -620,8 +622,9 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    void shouldAcceptDependenciesXmlRootFromStdin() throws Exception {
-        var pomPath = tempDir.resolve("pom.xml");
+    void shouldAcceptDependenciesXmlRootFromStdin(TestInfo testInfo) throws Exception {
+        var pomPath = Files.createDirectory(tempDir.resolve(testInfo.getTestMethod().get().getName()))
+                .resolve("pom.xml");
         var ec = executeWithStdin("""
                 <dependencies>
                   <dependency>
@@ -642,8 +645,9 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    void shouldRejectInvalidXmlRootFromStdin() {
-        var pomPath = tempDir.resolve("pom.xml");
+    void shouldRejectInvalidXmlRootFromStdin(TestInfo testInfo) {
+        var pomPath = Files.createDirectory(tempDir.resolve(testInfo.getTestMethod().get().getName()))
+                .resolve("pom.xml");
         var ec = executeWithStdin("""
                 <project>
                   <dependencies/>
