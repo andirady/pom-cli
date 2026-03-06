@@ -57,6 +57,8 @@ public class Main {
             cli.setOut(out);
 
             System.exit(cli.execute(args));
+        } catch (Exception e) {
+            Logger.getLogger("").log(Level.FINE, e, e::getMessage);
         }
     }
 
