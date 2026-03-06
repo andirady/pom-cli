@@ -645,7 +645,7 @@ class AddCommandTest extends BaseTest {
     }
 
     @Test
-    void shouldRejectInvalidXmlRootFromStdin(TestInfo testInfo) {
+    void shouldRejectInvalidXmlRootFromStdin(TestInfo testInfo) throws Exception {
         var pomPath = Files.createDirectory(tempDir.resolve(testInfo.getTestMethod().get().getName()))
                 .resolve("pom.xml");
         var ec = executeWithStdin("""
