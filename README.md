@@ -209,6 +209,24 @@ pom remove artifactId
 pom rm artifactId
 ```
 
+### Moving dependencies between scopes
+
+Dependencies can be moved to a different scope using the `move` command.
+
+```bash
+# Move to test scope
+pom move --test artifactId
+
+# Move to compile scope
+pom move --compile groupId:artifactId
+
+# Move to import scope
+pom move --import groupId:artifactId
+
+# Use the shorter alias, mv
+pom mv --runtime artifactId
+```
+
 ### Setting parent POM
 
 You can set the parent POM for your project using either a path to an existing parent project or by specifying the Maven coordinates.

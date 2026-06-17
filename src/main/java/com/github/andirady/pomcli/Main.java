@@ -43,7 +43,7 @@ import picocli.CommandLine.TypeConversionException;
 @Command(name = "pom", subcommandsRepeatable = true, subcommands = { IdCommand.class, AddCommand.class,
         SearchCommand.class, SetCommand.class, UnsetCommand.class, GetCommand.class,
         PlugCommand.class, UnplugCommand.class,
-        RemoveCommand.class, SetParentCommand.class })
+        RemoveCommand.class, MoveCommand.class, SetParentCommand.class, PropsCommand.class })
 public class Main {
 
     public static void main(String[] args) {
