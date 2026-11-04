@@ -43,7 +43,7 @@ import picocli.CommandLine.TypeConversionException;
 
 @Command(name = "pom", mixinStandardHelpOptions = true, versionProvider = Main.VersionProvider.class, subcommandsRepeatable = true, subcommands = {
         IdCommand.class, AddCommand.class,
-        SearchCommand.class, SetCommand.class, UnsetCommand.class, GetCommand.class,
+        SearchCommand.class, SetCommand.class, UnsetCommand.class, GetCommand.class, PropsCommand.class,
         PlugCommand.class, UnplugCommand.class,
         RemoveCommand.class, SetParentCommand.class })
 public class Main {

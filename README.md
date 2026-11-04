@@ -30,6 +30,16 @@ docker run --rm -it --user $(id -u):$(id -g) -v $PWD:/workspace ghcr.io/andirady
 
 ## Usage
 
+### Version and help
+
+```bash
+# Print the installed pom-cli version
+pom --version
+
+# Show the available commands and options
+pom --help
+```
+
 ### Quick start
 
 ```bash
@@ -262,6 +272,17 @@ pom get maven.compiler.source
 
 # Get property from specific profile
 pom -P test get maven.compiler.source
+```
+
+### Listing properties
+
+```bash
+# List properties defined in the default profile
+pom props
+
+# Read properties from another POM or project directory
+pom props --file /path/to/pom.xml
+pom props --file /path/to/project
 ```
 
 ### Removing properties
