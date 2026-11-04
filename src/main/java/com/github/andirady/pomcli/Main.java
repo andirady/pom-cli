@@ -36,12 +36,14 @@ import org.apache.maven.model.io.DefaultModelReader;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.IVersionProvider;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.TypeConversionException;
 
-@Command(name = "pom", subcommandsRepeatable = true, subcommands = { IdCommand.class, AddCommand.class,
-        SearchCommand.class, SetCommand.class, UnsetCommand.class, GetCommand.class,
+@Command(name = "pom", mixinStandardHelpOptions = true, versionProvider = Main.VersionProvider.class, subcommandsRepeatable = true, subcommands = {
+        IdCommand.class, AddCommand.class,
+        SearchCommand.class, SetCommand.class, UnsetCommand.class, GetCommand.class, PropsCommand.class,
         PlugCommand.class, UnplugCommand.class,
         RemoveCommand.class, SetParentCommand.class })
 public class Main {
@@ -80,6 +82,37 @@ public class Main {
         cli.registerConverter(Dependency.class, Main::stringToDependency);
 
         return cli;
+    }
+
+    static class VersionProvider implements IVersionProvider {
+
+        @Override
+        public String[] getVersion() {
+            return new String[] { "pom-cli " + getVersionString() };
+        }
+
+        private String getVersionString() {
+            var version = Main.class.getPackage().getImplementationVersion();
+            if (version != null && !version.isBlank()) {
+                return version;
+            }
+
+            var props = new Properties();
+            try (var is = Main.class.getResourceAsStream("version.properties")) {
+                if (is != null) {
+                    props.load(is);
+                    version = props.getProperty("version");
+                    if (version != null && !version.isBlank() && !version.startsWith("${")) {
+                        return version;
+                    }
+                }
+            } catch (IOException e) {
+                Logger.getLogger(Main.class.getName()).log(Level.FINE, e, e::getMessage);
+            }
+
+            return "dev";
+        }
+
     }
 
     private String profileId;
