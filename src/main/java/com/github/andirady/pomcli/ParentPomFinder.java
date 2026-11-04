@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
@@ -32,6 +33,7 @@ public class ParentPomFinder {
     }
 
     private static final Logger LOG = Logger.getLogger("");
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\$\\{([^}]+)\\}");
 
     private ModelReader reader;
 
@@ -68,9 +70,32 @@ public class ParentPomFinder {
         }
 
         try (var is = Files.newInputStream(parentPomPath)) {
-            return Optional.of(new Result(reader.read(is, null), false));
+            var pom = reader.read(is, null);
+            resolveVersionProperties(pom);
+            return Optional.of(new Result(pom, false));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private void resolveVersionProperties(Model pom) {
+        resolveProperty(pom.getVersion(), pom).ifPresent(pom::setVersion);
+
+        if (pom.getParent() instanceof Parent parent) {
+            resolveProperty(parent.getVersion(), pom).ifPresent(parent::setVersion);
+        }
+    }
+
+    private Optional<String> resolveProperty(String value, Model pom) {
+        if (value == null) {
+            return Optional.empty();
+        }
+
+        var matcher = PLACEHOLDER_PATTERN.matcher(value);
+        if (!matcher.matches()) {
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(pom.getProperties().getProperty(matcher.group(1)));
     }
 }
